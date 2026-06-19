@@ -101,7 +101,7 @@ Just pass `MetricsCallback()` to `model.learn()` — no extra flush calls needed
 
 | Owner | Files | Ping for |
 |-------|-------|----------|
-| **Mahmoud (Magnum)** | `cloud_env.py`, `traffic.py`, `env_factory.py`, `baseline_agent.py`, `metrics_callback.py`, `run_baseline_eval.py` | Env bugs, reward tuning, factory changes |
+| **Mahmoud** | `cloud_env.py`, `traffic.py`, `env_factory.py`, `baseline_agent.py`, `metrics_callback.py`, `run_baseline_eval.py` | Env bugs, reward tuning, factory changes |
 | **Mohamed** | `train_ppo.py` (to build) | PPO hyperparams, learning curves |
 | **Shrouk** | `train_dqn.py`, `sparse_ppo.py` (to build) | DQN training, sparse update experiments |
 
