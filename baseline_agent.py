@@ -1,4 +1,5 @@
 """Threshold-based auto-scaler baseline for cloud RL project."""
+import numpy as np
 
 
 class RuleBasedBaseline:
@@ -14,6 +15,8 @@ class RuleBasedBaseline:
         self.q_max = q_max
 
     def predict(self, obs, deterministic=True):
+        if len(obs.shape) == 2:
+            obs = obs[0]
         # denormalize
         booting = obs[1] * self.n_max
         cpu_util = obs[2]
@@ -28,4 +31,4 @@ class RuleBasedBaseline:
         else:
             action = 1                             # hold
 
-        return action, None
+        return np.array([action]), None
