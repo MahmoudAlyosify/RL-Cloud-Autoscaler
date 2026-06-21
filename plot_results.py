@@ -36,12 +36,12 @@ def generate_plot_1_learning_curves():
     ppo_steps, ppo_vals = load_eval_data("./logs/ppo_eval/evaluations.npz")
     dqn_steps, dqn_vals = load_eval_data("./logs/dqn_eval/evaluations.npz")
     
-    if ppo_steps:
+    if len(ppo_steps) > 0:
         plt.plot(ppo_steps, smooth(ppo_vals, 0.9), label="PPO", color="blue", linewidth=2)
         plt.fill_between(ppo_steps, np.array(smooth(ppo_vals, 0.9)) - np.std(ppo_vals)*0.2, 
                          np.array(smooth(ppo_vals, 0.9)) + np.std(ppo_vals)*0.2, color="blue", alpha=0.2)
                          
-    if dqn_steps:
+    if len(dqn_steps) > 0:
         plt.plot(dqn_steps, smooth(dqn_vals, 0.9), label="DQN", color="orange", linewidth=2)
         plt.fill_between(dqn_steps, np.array(smooth(dqn_vals, 0.9)) - np.std(dqn_vals)*0.2, 
                          np.array(smooth(dqn_vals, 0.9)) + np.std(dqn_vals)*0.2, color="orange", alpha=0.2)
