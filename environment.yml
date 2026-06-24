@@ -7,7 +7,6 @@ dependencies:
   - python=3.10
 
   # Core ML & RL dependencies
-  - stable-baselines3::stable-baselines3
   - gymnasium
   - numpy>=1.21.0
   - scipy>=1.7.0
