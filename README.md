@@ -21,3 +21,23 @@ The goal is to learn a dynamic scaling policy that minimizes infrastructure cost
    ```bash
    git clone [https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git](https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git)
    cd RL-Cloud-Autoscaler
+   
+2. Create and activate the conda environment:
+    ```
+    conda env create -f environment.yml
+    conda activate rl-cloud-autoscaler
+
+## 🏃 Running the Scripts
+### Vanilla DQN (default)
+    python train_dqn.py
+
+### DQN variants
+    python train_dqn.py --variant double
+    python train_dqn.py --variant dueling
+    python train_dqn.py --variant double_dueling
+
+### Sparsity ablation studies
+    python train_dqn.py --variant vanilla --update_frequency 1
+    python train_dqn.py --variant vanilla --update_frequency 8
+
+

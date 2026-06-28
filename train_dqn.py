@@ -4,13 +4,39 @@ import argparse
 import os
 import time
 
-from stable_baselines3 import DQN
+from vanilla_dqn import VanillaDQN
+from double_dqn import DoubleDQN
+from dueling_dqn import DuelingDQN
+from double_dueling_dqn import DoubleDuelingDQN
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 from cloud_env import CloudScalingEnv  # noqa: F401
 from env_factory import make_env, make_vec_env
 from metrics_callback import MetricsCallback
+
+VARIANT_MAP = {
+    "vanilla":        VanillaDQN,
+    "double":         DoubleDQN,
+    "dueling":        DuelingDQN,
+    "double_dueling": DoubleDuelingDQN,
+}
+
+DQN_HYPERPARAMS = dict(
+    learning_rate=1e-4,
+    buffer_size=100_000,
+    learning_starts=10_000,
+    batch_size=256,
+    tau=1.0,
+    gamma=0.99,
+    train_freq=4,
+    gradient_steps=1,
+    target_update_interval=1000,
+    exploration_fraction=0.1,
+    exploration_initial_eps=1.0,
+    exploration_final_eps=0.05,
+    policy_kwargs=dict(net_arch=[256, 256]),
+)
 
 
 def parse_args():
@@ -19,15 +45,21 @@ def parse_args():
                    help="Total training timesteps (use 20000 for smoke test)")
     p.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"],
                    help="Device for training")
+    p.add_argument("--variant", default="vanilla", choices=list(VARIANT_MAP.keys()),
+                   help="Algorithm varients for training (Specifically used for DQN)")
+    p.add_argument("--update_frequency", type=int, default=4, choices=[1, 2, 4, 8],
+                   help="Steps between gradient updates (sparse ablation)")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
 
-    for d in ["./models/best_dqn", "./checkpoints/dqn",
-              "./logs/dqn", "./logs/dqn_eval"]:
-        os.makedirs(d, exist_ok=True)
+    AgentClass = VARIANT_MAP[args.variant]
+    paths = AgentClass.get_paths(args.update_frequency)
+
+    for key in ["best_model", "checkpoint", "log_dir", "eval_log"]:
+        os.makedirs(paths[key], exist_ok=True)
 
     # single env with DummyVecEnv -- never SubprocVecEnv for DQN
     train_env = make_vec_env(n_envs=1, seed=0, use_subprocess=False,
@@ -39,41 +71,30 @@ def main():
         norm_obs=True, norm_reward=False, clip_obs=5.0, gamma=0.99)
     eval_env.training = False
 
-    model = DQN(
-        policy="MlpPolicy",
+    model = AgentClass(
         env=train_env,
-        learning_rate=1e-4,
-        buffer_size=100_000,
-        learning_starts=10_000,
-        batch_size=256,
-        tau=1.0,
-        gamma=0.99,
-        train_freq=4,
-        gradient_steps=1,
-        target_update_interval=1000,
-        exploration_fraction=0.1,
-        exploration_initial_eps=1.0,
-        exploration_final_eps=0.05,
-        policy_kwargs=dict(net_arch=[256, 256]),
-        tensorboard_log="./logs/dqn/",
+        update_frequency=args.update_frequency,
+        tensorboard_log=paths["log_dir"],
         device=args.device,
         verbose=1,
+        **DQN_HYPERPARAMS,
     )
 
     eval_cb = EvalCallback(
         eval_env,
-        best_model_save_path="./models/best_dqn/",
-        log_path="./logs/dqn_eval/",
-        eval_freq=80_000,  # matches PPO's effective interval (10k × 8 envs)
+        best_model_save_path=paths["best_model"],
+        log_path=paths["eval_log"],
+        eval_freq=80_000,
         n_eval_episodes=5,
         deterministic=True,
     )
     ckpt_cb = CheckpointCallback(save_freq=100_000,
-                                 save_path="./checkpoints/dqn/")
+                                 save_path=paths["checkpoint"])
     metrics_cb = MetricsCallback()
 
     print("=" * 60)
-    print(f"  [START] DQN Training")
+    print(f"  [START] {AgentClass.LABEL} Training")
+    print(f"  Variant: {args.variant} | Freq: {args.update_frequency}")
     print(f"  Device: {args.device} | Timesteps: {args.timesteps:,}")
     print("=" * 60)
 
@@ -88,19 +109,19 @@ def main():
     except KeyboardInterrupt:
         print("\n[INTERRUPTED] Saving model before exit ...")
 
-    model.save("./models/final_dqn")
-    train_env.save("./models/vecnormalize_dqn.pkl")
+    model.save(paths["final_model"])
+    train_env.save(paths["vecnorm"])
 
     wall_time = time.perf_counter() - t0
 
     print()
     print("=" * 60)
-    print(f"  [DONE] DQN Training")
-    print(f"  Wall-clock time: {wall_time:.1f}s ({wall_time/60:.1f} min)")
-    print(f"  Model saved to: ./models/final_dqn.zip")
-    print(f"  VecNormalize saved to: ./models/vecnormalize_dqn.pkl")
-    print(f"  Best model (EvalCallback): ./models/best_dqn/best_model.zip")
-    print(f"  Eval logs: ./logs/dqn_eval/evaluations.npz")
+    print(f"  [DONE] {AgentClass.LABEL} Training")
+    print(f"  Wall-clock time: {wall_time:.1f}s ({wall_time / 60:.1f} min)")
+    print(f"  Model saved to:  {paths['final_model']}.zip")
+    print(f"  VecNormalize:    {paths['vecnorm']}")
+    print(f"  Best model:      {paths['best_model']}best_model.zip")
+    print(f"  Eval logs:       {paths['eval_log']}evaluations.npz")
     print("=" * 60)
 
     train_env.close()
