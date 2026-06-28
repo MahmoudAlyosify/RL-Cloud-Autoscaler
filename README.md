@@ -22,8 +22,10 @@ The goal is to learn a dynamic scaling policy that minimizes infrastructure cost
    git clone [https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git](https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git)
    cd RL-Cloud-Autoscaler
    
-2. Install dependencies:
-   ```pip install -r requirements.txt```
+2. Create and activate the conda environment:
+    ```
+    conda env create -f environment.yml
+    conda activate rl-cloud-autoscaler
 
 ## 🏃 Running the Scripts
 ### Vanilla DQN (default)
