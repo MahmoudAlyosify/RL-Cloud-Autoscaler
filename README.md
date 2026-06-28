@@ -41,3 +41,16 @@ The goal is to learn a dynamic scaling policy that minimizes infrastructure cost
     python train_dqn.py --variant vanilla --update_frequency 8
 
 
+### A2C variants
+python train_a2c.py --variant default
+python train_a2c.py --variant low_entropy
+python train_a2c.py --variant high_entropy
+python train_a2c.py --variant short_rollout
+python train_a2c.py --variant long_rollout
+
+### PPO-LSTM variants
+python train_recurrent_ppo.py --variant default
+python train_recurrent_ppo.py --variant hidden64
+python train_recurrent_ppo.py --variant hidden256
+python train_recurrent_ppo.py --variant short_sequence
+python train_recurrent_ppo.py --variant long_sequence
