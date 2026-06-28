@@ -17,7 +17,7 @@ class CloudScalingEnv(gym.Env):
     def __init__(self, max_servers=10, min_servers=1, server_capacity=50,
                  max_queue=500, boot_delay=3, episode_length=1000,
                  traffic_mode="stochastic",
-                 reward_weights=(1.0, 0.1, 50.0, 5.0),
+                 reward_weights=(1.0, 0.1, 20.0, 5.0),
                  lambda_max=240.0, seed=None):
         super().__init__()
 
