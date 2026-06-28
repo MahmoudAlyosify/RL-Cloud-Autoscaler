@@ -54,3 +54,22 @@ python train_recurrent_ppo.py --variant hidden64
 python train_recurrent_ppo.py --variant hidden256
 python train_recurrent_ppo.py --variant short_sequence
 python train_recurrent_ppo.py --variant long_sequence
+
+
+pip install stable-baselines3 sb3-contrib gymnasium numpy matplotlib torch
+Then run training one after the other:
+python train_ppo.py --timesteps 2000000 --device auto
+python sparse_ppo.py --timesteps 500000 --device auto
+python train_dqn.py --variant double --timesteps 2000000 --device auto
+python train_dqn.py --variant dueling --timesteps 2000000 --device auto
+python train_dqn.py --variant double_dueling --timesteps 2000000 --device auto
+python train_a2c.py --timesteps 2000000 --device auto --seed 0
+python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
+After all training finishes, run evaluation:
+python run_baseline_eval.py
+python eval_agent.py --episodes 10 --seed 42
+If you added the comparison/stress-test files:
+python main_algorithm_comparison.py --eval-seeds 0,1,2,3,4 --episodes-per-seed 1
+python traffic_stress_test.py --seeds 0,1,2,3,4
+Then generate plots:
+python plot_results.py
