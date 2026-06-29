@@ -38,9 +38,18 @@ The goal is to learn a dynamic scaling policy that minimizes infrastructure cost
 
 ### Sparsity ablation studies
     python train_dqn.py --variant vanilla --update_frequency 1
+    python train_dqn.py --variant vanilla --update_frequency 4
     python train_dqn.py --variant vanilla --update_frequency 8
-
-
+    python train_dqn.py --variant double --update_frequency 1
+    python train_dqn.py --variant double --update_frequency 4
+    python train_dqn.py --variant double --update_frequency 8
+    python train_dqn.py --variant dueling --update_frequency 1
+    python train_dqn.py --variant dueling --update_frequency 4
+    python train_dqn.py --variant dueling --update_frequency 8
+    python train_dqn.py --variant double_dueling --update_frequency 1
+    python train_dqn.py --variant double_dueling --update_frequency 4
+    python train_dqn.py --variant double_dueling --update_frequency 8
+    
 ### A2C variants
 python train_a2c.py --variant default
 python train_a2c.py --variant low_entropy

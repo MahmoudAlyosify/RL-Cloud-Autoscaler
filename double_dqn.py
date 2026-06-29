@@ -33,7 +33,9 @@ What this class overrides
 
 import torch
 from base_dqn import BaseDQN
-
+import numpy as np
+import torch as th
+import torch.nn.functional as F
 
 class DoubleDQN(BaseDQN):
     """
@@ -69,68 +71,56 @@ class DoubleDQN(BaseDQN):
             **kwargs,
         )
 
-    #  Use the Double-Q formula to override the TD target computation
-    def _compute_td_target(
-        self,
-        next_observations: torch.Tensor,
-        rewards: torch.Tensor,
-        dones: torch.Tensor,
-    ) -> torch.Tensor:
-        """Compute the Double DQN TD target.
-
-        Parameters
-        ----------
-        next_observations : torch.Tensor, shape (batch, obs_dim)
-            Next states s' sampled from the replay buffer.
-        rewards : torch.Tensor, shape (batch,)
-            Immediate rewards r.
-        dones : torch.Tensor, shape (batch,)
-            Terminal flags (1.0 if terminal, else 0.0).
-        """
-        with torch.no_grad():
-            # Step 1 online network scores all actions at s'
-            online_next_q = self.q_net(next_observations)
-            # Step 2 online network selects the best action
-            best_actions = online_next_q.argmax(dim=1)
-            # Step 3 target network scores all actions at s'
-            target_next_q = self.q_net_target(next_observations)
-            # Step 4 target network evaluates the online-selected action and gather() picks one value per row using best_actions as column index
-            best_next_q = target_next_q.gather(dim=1, index=best_actions.unsqueeze(1)).squeeze(1)
-            # Step 5 mask terminals and discount
-            best_next_q = best_next_q * (1.0 - dones)
-
-        return rewards + self.gamma * best_next_q
-
     #  Override the training to make _compute_td_target work
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
-        """Apply sparse-update gate, then run Double-Q patched training.
-
-        The mechanism used here is a monkey-patch:
-            1. Save the target network's original forward() method.
-            2. Replace it temporarily with a function that returns the online network Q-values instead.
-            3. SB3's loop now calls the patched forward() when computing next_q_values for action selection & argmax picks from the online net.
-            4. SB3 then calls the target network in the 2nd time for evaluation.
-            5. Always restore the original forward() in finally block.
-
-        """
-        # Sparse-update ablation
         if self.num_timesteps % self.update_frequency != 0:
             return
-        # Swap target forward with online forward
-        original_forward = self.q_net_target.forward
 
-        def _online_forward(obs):
-            """Return online net Q-values in place of target net Q-values."""
-            return self.q_net.forward(obs)
+        self.policy.set_training_mode(True)
+        self._update_learning_rate(self.policy.optimizer)
 
-        self.q_net_target.forward = _online_forward
+        losses = []
+        for _ in range(gradient_steps):
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            discounts = (
+                replay_data.discounts
+                if replay_data.discounts is not None
+                else self.gamma
+            )
 
-        try:
-            from stable_baselines3 import DQN as SB3DQN
-            SB3DQN.train(self, gradient_steps, batch_size)
-        finally:
-            # Restore original forward even on exception or interrupt
-            self.q_net_target.forward = original_forward
+            with th.no_grad():
+                # Step 1: online network scores all actions at s'
+                online_next_q = self.q_net(replay_data.next_observations)
+                # Step 2: online network picks the best action
+                best_actions = online_next_q.argmax(dim=1, keepdim=True)
+                # Step 3: target network scores all actions at s'
+                target_next_q = self.q_net_target(replay_data.next_observations)
+                # Step 4: target network evaluates only the online-selected action
+                next_q_values = target_next_q.gather(dim=1, index=best_actions)
+                # Step 5: mask terminals and compute TD target
+                target_q_values = (
+                        replay_data.rewards
+                        + (1 - replay_data.dones) * discounts * next_q_values
+                )
+
+            # current Q for the actions actually taken
+            current_q_values = self.q_net(replay_data.observations)
+            current_q_values = th.gather(
+                current_q_values, dim=1, index=replay_data.actions.long()
+            )
+
+            # Huber loss (same as SB3)
+            loss = F.smooth_l1_loss(current_q_values, target_q_values)
+            losses.append(loss.item())
+
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            self.policy.optimizer.step()
+
+        self._n_updates += gradient_steps
+        self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        self.logger.record("train/loss", np.mean(losses))
 
 
     @classmethod
