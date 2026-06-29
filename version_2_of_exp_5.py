@@ -54,8 +54,8 @@ from env_factory import make_env, make_vec_env
 if "CloudScaling-v1" not in gym.envs.registry:
     gym.register(id="CloudScaling-v1", entry_point="cloud_env:CloudScalingEnv")
 
-# ── experiment config ──────────────────────────────────────────────────────────
-GAMMA_VALUES  = [5.0, 10.0, 50.0, 100.0, 200.0]
+#experiment config
+GAMMA_VALUES  = [5.0, 10.0, 20.0, 30.0, 50.0]
 NOMINAL       = {"alpha": 1.0, "beta": 0.1, "gamma": 50.0, "omega": 5.0}
 
 # PPO hyperparams (from your Optuna run)
@@ -97,7 +97,7 @@ AGENT_STYLE = {
 }
 
 
-# ── helpers ────────────────────────────────────────────────────────────────────
+#helpers
 def reward_weights_for(g: float) -> tuple:
     return (NOMINAL["alpha"], NOMINAL["beta"], g, NOMINAL["omega"])
 
@@ -106,7 +106,7 @@ def model_dir(g: float) -> str:
     return f"./models/gamma_{int(g)}"
 
 
-# ── training ───────────────────────────────────────────────────────────────────
+#training
 def train_ppo(g: float, timesteps: int, device: str) -> tuple[str, str]:
     """Train PPO with reward weight γ=g. Returns (model_path, vecnorm_path)."""
     rw   = reward_weights_for(g)
@@ -184,7 +184,7 @@ def train_dqn(g: float, timesteps: int, device: str) -> tuple[str, str]:
     return f"{best_path}/best_model.zip", vecnorm_path
 
 
-# ── evaluation ─────────────────────────────────────────────────────────────────
+# evaluation
 def evaluate(agent, g: float, vecnorm_path: str | None,
              n_episodes: int, seed: int, ep_len: int = 1000) -> dict:
     """Evaluate *agent* in an env with reward weight γ=g."""
@@ -224,7 +224,7 @@ def evaluate(agent, g: float, vecnorm_path: str | None,
             "dropped": agg(drops), "queue_occ": agg(qocc)}
 
 
-# ── plotting ───────────────────────────────────────────────────────────────────
+#plotting
 PLOT_METRICS = [
     ("reward",    "Mean total reward"),
     ("dropped",   "Mean dropped requests"),
@@ -274,15 +274,15 @@ def plot_results(results: dict, out_dir: str):
         print(f"  Saved → {out}")
 
 
-# ── main ───────────────────────────────────────────────────────────────────────
+#main
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--timesteps", type=int, default=2_000_000,
+    ap.add_argument("--timesteps", type=int, default=1_000_000,
                     help="Training timesteps per config (use 20000 for smoke test)")
     ap.add_argument("--episodes",  type=int, default=10,
                     help="Evaluation episodes per agent × γ")
     ap.add_argument("--seed",      type=int, default=42)
-    ap.add_argument("--device",    default="auto", choices=["auto", "cpu", "cuda"])
+    ap.add_argument("--device",    default="cpu", choices=["auto", "cpu", "cuda"])
     ap.add_argument("--eval_only", action="store_true",
                     help="Skip training; load existing models and evaluate only")
     ap.add_argument("--out_dir",   default="plots")
@@ -303,7 +303,7 @@ def main():
         print(f"  γ = {g}")
         print(f"{'='*60}")
 
-        # ── train ─────────────────────────────────────────────────────────────
+        # train
         ppo_model_path = f"{mdir}/ppo_best/best_model.zip"
         ppo_vecnorm    = f"{mdir}/ppo_vecnorm.pkl"
         dqn_model_path = f"{mdir}/dqn_best/best_model.zip"
@@ -315,7 +315,7 @@ def main():
         else:
             print(f"  [--eval_only] skipping training, loading existing models")
 
-        # ── load trained models ────────────────────────────────────────────────
+        # load trained models
         agents_eval = {
             "baseline": baseline,
             "random":   "random",
@@ -323,17 +323,17 @@ def main():
 
         if os.path.exists(ppo_model_path):
             agents_eval["ppo"] = PPO.load(ppo_model_path)
-            print(f"  [✓] PPO loaded from {ppo_model_path}")
+            print(f" PPO loaded from {ppo_model_path}")
         else:
-            print(f"  [!] PPO model not found at {ppo_model_path} — skipping")
+            print(f"PPO model not found at {ppo_model_path} — skipping")
 
         if os.path.exists(dqn_model_path):
             agents_eval["dqn"] = DQN.load(dqn_model_path)
-            print(f"  [✓] DQN loaded from {dqn_model_path}")
+            print(f"DQN loaded from {dqn_model_path}")
         else:
-            print(f"  [!] DQN model not found at {dqn_model_path} — skipping")
+            print(f"DQN model not found at {dqn_model_path} — skipping")
 
-        # ── evaluate ───────────────────────────────────────────────────────────
+        # evaluate
         vecnorm_map = {
             "ppo":      ppo_vecnorm,
             "dqn":      dqn_vecnorm,
@@ -350,17 +350,17 @@ def main():
                   f"dropped={m['dropped']['mean']:>8.1f}  "
                   f"cost={m['cost']['mean']:>8.1f}")
 
-    # ── save JSON ──────────────────────────────────────────────────────────────
+    #save JSON 
     out_json = "results/exp5_gamma_sweep.json"
     with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n[✓] Results saved → {out_json}")
+    print(f"\nResults saved → {out_json}")
 
-    # ── plot ───────────────────────────────────────────────────────────────────
+    #plot
     print("\nGenerating plots ...")
     plot_results(results, args.out_dir)
 
-    print(f"\n[✓] Total wall time: {time.perf_counter()-t0:.1f}s "
+    print(f"\nTotal wall time: {time.perf_counter()-t0:.1f}s "
           f"({(time.perf_counter()-t0)/60:.1f} min)")
 
 

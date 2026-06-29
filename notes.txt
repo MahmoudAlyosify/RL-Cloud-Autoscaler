@@ -1,0 +1,1051 @@
+| custom/                         |          |
+|    active_servers_mean          | 1.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 2.75     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 86.9     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 431     |
+|    iterations      | 231     |
+|    time_elapsed    | 4383    |
+|    total_timesteps | 1892352 |
+--------------------------------
+------------------------------------------------
+| custom/                         |            |
+|    active_servers_mean          | 3.38       |
+|    dropped_requests_per_episode | 0          |
+|    queue_length_mean            | 104        |
+| train/                          |            |
+|    approx_kl                    | 0.04930624 |
+|    clip_fraction                | 0.19       |
+|    clip_range                   | 0.2        |
+|    entropy_loss                 | -0.514     |
+|    explained_variance           | 0.227      |
+|    learning_rate                | 0.0003     |
+|    loss                         | -0.0214    |
+|    n_updates                    | 2310       |
+|    policy_gradient_loss         | -0.0143    |
+|    value_loss                   | 0.0119     |
+------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 11       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 59.1     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 11.9     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 27.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 8        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 79.4     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 431     |
+|    iterations      | 232     |
+|    time_elapsed    | 4402    |
+|    total_timesteps | 1900544 |
+--------------------------------
+------------------------------------------------
+| custom/                         |            |
+|    active_servers_mean          | 4          |
+|    dropped_requests_per_episode | 0          |
+|    queue_length_mean            | 93.2       |
+| train/                          |            |
+|    approx_kl                    | 0.04659943 |
+|    clip_fraction                | 0.19       |
+|    clip_range                   | 0.2        |
+|    entropy_loss                 | -0.514     |
+|    explained_variance           | 0.296      |
+|    learning_rate                | 0.0003     |
+|    loss                         | -0.0105    |
+|    n_updates                    | 2320       |
+|    policy_gradient_loss         | -0.0155    |
+|    value_loss                   | 0.0061     |
+------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 80.6     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 54.9     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 53.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 62.2     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 73.6     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 431     |
+|    iterations      | 233     |
+|    time_elapsed    | 4420    |
+|    total_timesteps | 1908736 |
+--------------------------------
+------------------------------------------------
+| custom/                         |            |
+|    active_servers_mean          | 4.12       |
+|    dropped_requests_per_episode | 0          |
+|    queue_length_mean            | 105        |
+| train/                          |            |
+|    approx_kl                    | 0.04019729 |
+|    clip_fraction                | 0.199      |
+|    clip_range                   | 0.2        |
+|    entropy_loss                 | -0.543     |
+|    explained_variance           | 0.224      |
+|    learning_rate                | 0.0003     |
+|    loss                         | -0.0486    |
+|    n_updates                    | 2330       |
+|    policy_gradient_loss         | -0.0181    |
+|    value_loss                   | 0.00867    |
+------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 98.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 24.1     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 51.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 43.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 10.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 10       |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 431     |
+|    iterations      | 234     |
+|    time_elapsed    | 4438    |
+|    total_timesteps | 1916928 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 3.38        |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 52          |
+| train/                          |             |
+|    approx_kl                    | 0.032429073 |
+|    clip_fraction                | 0.198       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.525      |
+|    explained_variance           | 0.61        |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.0257     |
+|    n_updates                    | 2340        |
+|    policy_gradient_loss         | -0.0171     |
+|    value_loss                   | 0.000606    |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 44.6     |
+----------------------------------------------
+Eval num_timesteps=1920000, episode_reward=-5776.19 +/- 5820.47
+Episode length: 1000.00 +/- 0.00
+----------------------------------
+| eval/              |           |
+|    mean_ep_length  | 1e+03     |
+|    mean_reward     | -5.78e+03 |
+| time/              |           |
+|    total_timesteps | 1920000   |
+----------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 29.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 21.6     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 48.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 12.1     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 24.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 20.9     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 431     |
+|    iterations      | 235     |
+|    time_elapsed    | 4461    |
+|    total_timesteps | 1925120 |
+--------------------------------
+-----------------------------------------------
+| custom/                         |           |
+|    active_servers_mean          | 1.5       |
+|    dropped_requests_per_episode | 0         |
+|    queue_length_mean            | 0         |
+| train/                          |           |
+|    approx_kl                    | 0.0375783 |
+|    clip_fraction                | 0.202     |
+|    clip_range                   | 0.2       |
+|    entropy_loss                 | -0.518    |
+|    explained_variance           | 0.302     |
+|    learning_rate                | 0.0003    |
+|    loss                         | -0.0373   |
+|    n_updates                    | 2350      |
+|    policy_gradient_loss         | -0.0171   |
+|    value_loss                   | 0.00357   |
+-----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 110      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 27.1     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 9.75     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 83.9     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 8.25     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 37.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 47.9     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 431     |
+|    iterations      | 236     |
+|    time_elapsed    | 4480    |
+|    total_timesteps | 1933312 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 1.38        |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 0           |
+| train/                          |             |
+|    approx_kl                    | 0.044531357 |
+|    clip_fraction                | 0.197       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.541      |
+|    explained_variance           | 0.289       |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.041      |
+|    n_updates                    | 2360        |
+|    policy_gradient_loss         | -0.0182     |
+|    value_loss                   | 0.00255     |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 28.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0.5      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 75.6     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 39.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 3.62     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 83.6     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 35.8     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 237     |
+|    time_elapsed    | 4505    |
+|    total_timesteps | 1941504 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 1.12        |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 0           |
+| train/                          |             |
+|    approx_kl                    | 0.044234954 |
+|    clip_fraction                | 0.206       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.525      |
+|    explained_variance           | 0.298       |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.0311     |
+|    n_updates                    | 2370        |
+|    policy_gradient_loss         | -0.0179     |
+|    value_loss                   | 0.0102      |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 34.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 11.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 97.9     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 112      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 4.88     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 53.6     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 238     |
+|    time_elapsed    | 4526    |
+|    total_timesteps | 1949696 |
+--------------------------------
+------------------------------------------------
+| custom/                         |            |
+|    active_servers_mean          | 1.38       |
+|    dropped_requests_per_episode | 0          |
+|    queue_length_mean            | 0          |
+| train/                          |            |
+|    approx_kl                    | 0.05921965 |
+|    clip_fraction                | 0.2        |
+|    clip_range                   | 0.2        |
+|    entropy_loss                 | -0.531     |
+|    explained_variance           | 0.256      |
+|    learning_rate                | 0.0003     |
+|    loss                         | -0.0363    |
+|    n_updates                    | 2380       |
+|    policy_gradient_loss         | -0.0139    |
+|    value_loss                   | 0.0232     |
+------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 183      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 45       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 10       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 60.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 3.62     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 63.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 30.1     |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 239     |
+|    time_elapsed    | 4544    |
+|    total_timesteps | 1957888 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 1.25        |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 0           |
+| train/                          |             |
+|    approx_kl                    | 0.051352635 |
+|    clip_fraction                | 0.204       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.522      |
+|    explained_variance           | 0.345       |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.0301     |
+|    n_updates                    | 2390        |
+|    policy_gradient_loss         | -0.0161     |
+|    value_loss                   | 0.00909     |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 114      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 19       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 25.9     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 108      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 3.5      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 77.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 64.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 240     |
+|    time_elapsed    | 4565    |
+|    total_timesteps | 1966080 |
+--------------------------------
+------------------------------------------------
+| custom/                         |            |
+|    active_servers_mean          | 3.88       |
+|    dropped_requests_per_episode | 0          |
+|    queue_length_mean            | 154        |
+| train/                          |            |
+|    approx_kl                    | 0.04533162 |
+|    clip_fraction                | 0.195      |
+|    clip_range                   | 0.2        |
+|    entropy_loss                 | -0.53      |
+|    explained_variance           | 0.384      |
+|    learning_rate                | 0.0003     |
+|    loss                         | -0.0452    |
+|    n_updates                    | 2400       |
+|    policy_gradient_loss         | -0.0198    |
+|    value_loss                   | 0.00219    |
+------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 10.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 54.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 114      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 101      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 42.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 241     |
+|    time_elapsed    | 4584    |
+|    total_timesteps | 1974272 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 3.75        |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 106         |
+| train/                          |             |
+|    approx_kl                    | 0.048522115 |
+|    clip_fraction                | 0.183       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.531      |
+|    explained_variance           | 0.181       |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.0445     |
+|    n_updates                    | 2410        |
+|    policy_gradient_loss         | -0.0192     |
+|    value_loss                   | 0.0111      |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 19.2     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 26       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 1.62     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 10.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 102      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 29       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 242     |
+|    time_elapsed    | 4603    |
+|    total_timesteps | 1982464 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 3           |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 31.8        |
+| train/                          |             |
+|    approx_kl                    | 0.042500038 |
+|    clip_fraction                | 0.213       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.522      |
+|    explained_variance           | 0.207       |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.0558     |
+|    n_updates                    | 2420        |
+|    policy_gradient_loss         | -0.0164     |
+|    value_loss                   | 0.00943     |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 56.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 14.2     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 54.2     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.38     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 2.38     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 130      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 94.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 243     |
+|    time_elapsed    | 4622    |
+|    total_timesteps | 1990656 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 2.88        |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 37.8        |
+| train/                          |             |
+|    approx_kl                    | 0.047820143 |
+|    clip_fraction                | 0.202       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.503      |
+|    explained_variance           | 0.228       |
+|    learning_rate                | 0.0003      |
+|    loss                         | 0.0182      |
+|    n_updates                    | 2430        |
+|    policy_gradient_loss         | -0.0155     |
+|    value_loss                   | 0.0464      |
+-------------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 7.5      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 68.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 54.1     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 3.12     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 3        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 4        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 104      |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 244     |
+|    time_elapsed    | 4640    |
+|    total_timesteps | 1998848 |
+--------------------------------
+-------------------------------------------------
+| custom/                         |             |
+|    active_servers_mean          | 3           |
+|    dropped_requests_per_episode | 0           |
+|    queue_length_mean            | 102         |
+| train/                          |             |
+|    approx_kl                    | 0.042782027 |
+|    clip_fraction                | 0.191       |
+|    clip_range                   | 0.2         |
+|    entropy_loss                 | -0.514      |
+|    explained_variance           | 0.339       |
+|    learning_rate                | 0.0003      |
+|    loss                         | -0.038      |
+|    n_updates                    | 2440        |
+|    policy_gradient_loss         | -0.0165     |
+|    value_loss                   | 0.0301      |
+-------------------------------------------------
+Eval num_timesteps=2000000, episode_reward=-3708.01 +/- 1652.49
+Episode length: 1000.00 +/- 0.00
+----------------------------------
+| eval/              |           |
+|    mean_ep_length  | 1e+03     |
+|    mean_reward     | -3.71e+03 |
+| time/              |           |
+|    total_timesteps | 2000000   |
+----------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 19.2     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.12     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 44.4     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.75     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 81       |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.62     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 3.25     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 2.88     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 53.5     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3        |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 50.8     |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 1.25     |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 0        |
+----------------------------------------------
+----------------------------------------------
+| custom/                         |          |
+|    active_servers_mean          | 3.5      |
+|    dropped_requests_per_episode | 0        |
+|    queue_length_mean            | 104      |
+----------------------------------------------
+--------------------------------
+| time/              |         |
+|    fps             | 430     |
+|    iterations      | 245     |
+|    time_elapsed    | 4666    |
+|    total_timesteps | 2007040 |
+--------------------------------
+Saved plot to ./results/recurrent_ppo/recurrent_ppo_eval_curve.png
+============================================================
+[DONE] PPO-LSTM Training
+Wall time: 4680.8s
+Final model: ./models/final_recurrent_ppo.zip
+Best model:  ./models/best_recurrent_ppo/best_model.zip
+VecNormalize: ./models/vecnormalize_recurrent_ppo.pkl
+============================================================
+============================================================
+  BASELINE EVALUATION (10 episodes x 1000 steps)
+============================================================
+  Episode  1/10 | seed=1000 | reward=  -7691.4 | dropped= 236 | cost= 2969 | mean_queue=  22.5
+  Episode  2/10 | seed=1001 | reward=  -6510.8 | dropped= 171 | cost= 3089 | mean_queue=  19.3
+  Episode  3/10 | seed=1002 | reward=  -3175.2 | dropped=   0 | cost= 3173 | mean_queue=  24.8
+  Episode  4/10 | seed=1003 | reward=  -4701.5 | dropped=  86 | cost= 2974 | mean_queue=  22.9
+  Episode  5/10 | seed=1004 | reward=  -9133.8 | dropped= 306 | cost= 3011 | mean_queue=  24.7
+  Episode  6/10 | seed=1005 | reward=  -3506.5 | dropped=   0 | cost= 3500 | mean_queue=  19.5
+  Episode  7/10 | seed=1006 | reward=  -3227.3 | dropped=   0 | cost= 3226 | mean_queue=  18.8
+  Episode  8/10 | seed=1007 | reward=  -8216.9 | dropped= 245 | cost= 3314 | mean_queue=  26.7
+  Episode  9/10 | seed=1008 | reward=  -4765.7 | dropped=  63 | cost= 3494 | mean_queue=  21.3
+  Episode 10/10 | seed=1009 | reward=  -4867.7 | dropped=  74 | cost= 3386 | mean_queue=  19.1
+
+============================================================
+  RESULTS
+============================================================
+  Total Reward     :   -5579.69 +/- 2060.75
+  Operational Cost :    3213.60 +/- 193.92
+  Dropped Requests :     118.10 +/- 107.69
+  Mean Queue Length:      21.97 +/- 2.65
+============================================================
+
+  Saved to results/baseline_metrics.json
+Evaluating Baseline...
+Evaluating Random...
+Evaluating PPO...
+/home/yaya0002/miniconda3/envs/rl-cloud-autoscaler/lib/python3.10/site-packages/stable_baselines3/common/on_policy_algorithm.py:150: UserWarning: You are trying to run PPO on the GPU, but it is primarily intended to run on the CPU when not using a CNN policy (you are using ActorCriticPolicy which should be a MlpPolicy). See https://github.com/DLR-RM/stable-baselines3/issues/1245 for more info. You can pass `device='cpu'` or `export CUDA_VISIBLE_DEVICES=` to force using the CPU.Note: The model will train, but the GPU utilization will be poor and the training might take longer than on CPU.
+  warnings.warn(
+Evaluating DQN...
+
+--- Final Evaluation Results ---
+
+Baseline:
+  Reward:      -5063.67 ± 1663.40
+  Cost:        3268.00 ± 137.69
+  Dropped:     89.60 ± 83.40
+  Queue Occ:   0.0470 ± 0.0045
+
+Random:
+  Reward:      -158163.28 ± 51771.04
+  Cost:        4754.70 ± 485.31
+  Dropped:     7622.90 ± 2593.96
+  Queue Occ:   0.1640 ± 0.0425
+
+PPO:
+  Reward:      -2854.50 ± 86.68
+  Cost:        2835.80 ± 88.39
+  Dropped:     0.00 ± 0.00
+  Queue Occ:   0.0407 ± 0.0049
+
+DQN:
+  Reward:      -3512.06 ± 688.21
+  Cost:        2832.00 ± 84.28
+  Dropped:     14.10 ± 31.52
+  Queue Occ:   0.0646 ± 0.0060
+python: can't open file '/mnt/e/RL/RL-Cloud-Autoscaler/main_algorithm_comparison.py': [Errno 2] No such file or directory
+python: can't open file '/mnt/e/RL/RL-Cloud-Autoscaler/traffic_stress_test.py': [Errno 2] No such file or directory
+Generating Plot 1...
+Generating Plot 2...
+Generating Plot 3...
+Generating Plot 4...
+Generating Plot 5...
+Done! Plots saved to ./results/plots/
+(rl-cloud-autoscaler) yaya0002@L09P18:/mnt/e/RL/RL-Cloud-Autoscaler$ 
