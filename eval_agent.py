@@ -178,6 +178,12 @@ def main():
         seed=args.seed,
     )
 
+    print("Evaluating PPO...")
+    if os.path.exists("./models/final_ppo.zip") and os.path.exists("./models/vecnormalize_ppo.pkl"):
+        ppo_model = PPO.load("./models/final_ppo.zip")
+        results["PPO"] = evaluate_agent(ppo_model, "./models/vecnormalize_ppo.pkl", args.episodes, args.seed)
+    else:
+        print("PPO model or vecnormalize not found. Skipping.")
     maybe_eval_model(
         results,
         name="PPO",
