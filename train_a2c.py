@@ -1,12 +1,23 @@
-"""Train A2C on CloudScaling-v1.
+"""
+This Training for A2C for the cloud autoscaling environment.
 
-A2C is used as a simple actor-critic reinforcement learning method.
-It learns:
-1. an actor policy that chooses scale out, hold, or scale in
-2. a critic value function that estimates how good the current state is
+A2C is used as a simpler learning-based method to compare with PPO,
+PPO-LSTM, DQN variants, and the rule-based baseline. The main idea is that
 
-This allows us to compare a simple actor-critic method against PPO,
-DQN-based methods, and the rule-based baseline.
+A2C learns two parts:
+
+1. The actor, which chooses the scaling action like scale out, hold, scale in.
+
+2. The critic, which estimates how good the current cloud state is.
+
+This is useful because the agent must balance cost and service
+quality. Keeping too many servers running is expensive, but keeping too few
+servers can increase the queue or drop requests. A2C learns this tradeoff by
+interacting with the simulator.
+
+This script trains the model, evaluates it during training, saves the best and
+final policies, saves the normalization statistics, and creates a learning
+curve plot.
 """
 
 import argparse
@@ -20,16 +31,21 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
+# We import registers CloudScaling-v1 so env_factory can create it.
 from cloud_env import CloudScalingEnv  # noqa: F401
+
 from env_factory import make_env, make_vec_env
 from metrics_callback import MetricsCallback
 
 
 def plot_eval_curve(eval_path, out_path):
+    """Create a plot showing how A2C improves during training."""
+
     if not os.path.exists(eval_path):
         print(f"No eval file found at {eval_path}")
         return
 
+    # EvalCallback stores rewards from periodic evaluations in this file.
     data = np.load(eval_path)
     timesteps = data["timesteps"]
     rewards = data["results"]
@@ -59,6 +75,8 @@ def plot_eval_curve(eval_path, out_path):
 
 
 def parse_args():
+    """Here we read training settings from the terminal."""
+
     parser = argparse.ArgumentParser(description="Train A2C on CloudScaling-v1")
 
     parser.add_argument(
@@ -88,6 +106,7 @@ def parse_args():
 def main():
     args = parse_args()
 
+    # Create folders for models, checkpoints, logs, and plots.
     for path in [
         "./models/best_a2c",
         "./checkpoints/a2c",
@@ -97,6 +116,8 @@ def main():
     ]:
         os.makedirs(path, exist_ok=True)
 
+    # This is the environment used for learning.
+    # We use several copies of the cloud environment so A2C can collect more experience before each update.
     train_env = make_vec_env(
         n_envs=8,
         seed=args.seed,
@@ -104,6 +125,9 @@ def main():
         norm_reward=True,
     )
 
+    # This environment is only used for evaluation.
+    # Rewards are not normalized here, so the reported reward stays in the
+    # real scale of the cloud environment.
     eval_env = VecNormalize(
         DummyVecEnv([make_env(rank=100, seed=args.seed)]),
         norm_obs=True,
@@ -113,6 +137,9 @@ def main():
     )
     eval_env.training = False
 
+    # Define the A2C agent.
+    # MlpPolicy fits this environment because the observation is a small vector
+    # of numerical values such as active servers, CPU utilization, and queue.
     model = A2C(
         policy="MlpPolicy",
         env=train_env,
@@ -132,6 +159,7 @@ def main():
         verbose=1,
     )
 
+    # Evaluate the model during training and save the best version.
     eval_cb = EvalCallback(
         eval_env,
         best_model_save_path="./models/best_a2c/",
@@ -141,11 +169,13 @@ def main():
         deterministic=True,
     )
 
+    # Save backup checkpoints during training.
     ckpt_cb = CheckpointCallback(
         save_freq=100_000,
         save_path="./checkpoints/a2c/",
     )
 
+    # Log cloud-specific metrics such as queue length and dropped requests.
     metrics_cb = MetricsCallback()
 
     print("=" * 60)
@@ -164,7 +194,11 @@ def main():
     except KeyboardInterrupt:
         print("\n[INTERRUPTED] Saving A2C model")
 
+    # Save the final trained model.
     model.save("./models/final_a2c")
+
+    # Save normalization statistics so evaluation uses the same observation
+    # scaling as training.
     train_env.save("./models/vecnormalize_a2c.pkl")
 
     wall_time = time.perf_counter() - start

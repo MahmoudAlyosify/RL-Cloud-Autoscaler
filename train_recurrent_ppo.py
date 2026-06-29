@@ -1,17 +1,26 @@
-#pip install sb3-contrib
+"""
+Train PPO with LSTM.
 
+This file trains a Recurrent PPO agent, also called PPO-LSTM.
 
-"""Train PPO with LSTM on CloudScaling-v1.
+The normal PPO agent chooses an action from the current observation only.
+PPO-LSTM adds memory through an LSTM policy, so the agent can also use
+information from recent timesteps.
 
-This file trains Recurrent PPO, also called PPO-LSTM.
+This matters in cloud autoscaling because the environment is not only about
+the current CPU or queue value. Recent traffic trends also matter. For example,
+if traffic has been increasing for several steps, the agent may need to scale
+out before the queue becomes too large. Server boot delay also makes memory
+useful, because a scale-out action does not immediately create a new active
+server.
 
-PPO provides stable policy-gradient learning using clipped updates.
-The LSTM policy adds memory, allowing the agent to use recent traffic
-and queue history when choosing scaling actions.
+In our project, PPO-LSTM is used to test whether adding memory improves
+autoscaling decisions compared with standard PPO, A2C, DQN variants, and the
+rule-based baseline.
 
-This is useful for cloud autoscaling because server boot delay and
-traffic spikes make the best action depend on previous timesteps,
-not only the current observation.
+This script trains the model, evaluates it during training, saves the best and
+final policies, saves the normalization statistics, and creates a learning
+curve plot.
 """
 
 import argparse
@@ -25,16 +34,21 @@ from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
+# This import registers CloudScaling-v1 so env_factory can create it.
 from cloud_env import CloudScalingEnv  # noqa: F401
+
 from env_factory import make_env, make_vec_env
 from metrics_callback import MetricsCallback
 
 
 def plot_eval_curve(eval_path, out_path):
+    """Create a plot showing how PPO-LSTM improves during training."""
+
     if not os.path.exists(eval_path):
         print(f"No eval file found at {eval_path}")
         return
 
+    # EvalCallback stores rewards from periodic evaluations in this file.
     data = np.load(eval_path)
     timesteps = data["timesteps"]
     rewards = data["results"]
@@ -64,6 +78,8 @@ def plot_eval_curve(eval_path, out_path):
 
 
 def parse_args():
+    """Read training settings from the terminal."""
+
     parser = argparse.ArgumentParser(description="Train PPO-LSTM on CloudScaling-v1")
 
     parser.add_argument(
@@ -93,6 +109,7 @@ def parse_args():
 def main():
     args = parse_args()
 
+    # Create folders for models, checkpoints, logs, and plots.
     for path in [
         "./models/best_recurrent_ppo",
         "./checkpoints/recurrent_ppo",
@@ -102,6 +119,9 @@ def main():
     ]:
         os.makedirs(path, exist_ok=True)
 
+    # This is the environment used for learning.
+    # Multiple copies of the environment let PPO collect larger batches of
+    # experience before each policy update.
     train_env = make_vec_env(
         n_envs=8,
         seed=args.seed,
@@ -109,6 +129,9 @@ def main():
         norm_reward=True,
     )
 
+    # This environment is only used for evaluation.
+    
+    # Reward normalization is disabled so the evaluation reward stays in the real scale of the cloud environment.
     eval_env = VecNormalize(
         DummyVecEnv([make_env(rank=100, seed=args.seed)]),
         norm_obs=True,
@@ -118,6 +141,10 @@ def main():
     )
     eval_env.training = False
 
+    # Define the PPO-LSTM agent.
+    # MlpLstmPolicy means the policy has an LSTM memory layer.
+    # The LSTM can keep information from previous observations, which helps
+    # when traffic changes over time or when server boot delay creates delayed effects.
     model = RecurrentPPO(
         policy="MlpLstmPolicy",
         env=train_env,
@@ -144,6 +171,7 @@ def main():
         verbose=1,
     )
 
+    # Evaluate the model during training and save the best version.
     eval_cb = EvalCallback(
         eval_env,
         best_model_save_path="./models/best_recurrent_ppo/",
@@ -153,11 +181,13 @@ def main():
         deterministic=True,
     )
 
+    # Save backup checkpoints during training.
     ckpt_cb = CheckpointCallback(
         save_freq=100_000,
         save_path="./checkpoints/recurrent_ppo/",
     )
 
+    # Log cloud-specific metrics such as queue length and dropped requests.
     metrics_cb = MetricsCallback()
 
     print("=" * 60)
@@ -176,7 +206,11 @@ def main():
     except KeyboardInterrupt:
         print("\n[INTERRUPTED] Saving PPO-LSTM model")
 
+    # Save the final trained model.
     model.save("./models/final_recurrent_ppo")
+
+    # Save normalization statistics so evaluation uses the same observation
+    # scaling as training.
     train_env.save("./models/vecnormalize_recurrent_ppo.pkl")
 
     wall_time = time.perf_counter() - start
