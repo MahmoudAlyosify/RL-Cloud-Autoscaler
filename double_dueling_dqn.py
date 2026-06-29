@@ -22,7 +22,9 @@ from stable_baselines3.dqn.policies import DQNPolicy
 from base_dqn import BaseDQN
 from dueling_dqn import DuelingQNetwork   # reuse — no duplication
 
-
+import numpy as np
+import torch as th
+import torch.nn.functional as F
 
 
 # Policy that builds both online and target networks as DuelingQNetwork.
@@ -64,21 +66,55 @@ class DoubleDuelingDQN(BaseDQN):
             **kwargs,
         )
 
-
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
         if self.num_timesteps % self.update_frequency != 0:
             return
-        original_forward = self.q_net_target.forward
 
-        def _online_forward(obs):
-            """Return Dueling online Q-values in place of Dueling target Q-values."""
-            return self.q_net.forward(obs)
+        self.policy.set_training_mode(True)
+        self._update_learning_rate(self.policy.optimizer)
 
-        self.q_net_target.forward = _online_forward
-        try:
-            SB3DQN.train(self, gradient_steps, batch_size)
-        finally:
-            self.q_net_target.forward = original_forward
+        losses = []
+        for _ in range(gradient_steps):
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            discounts = (
+                replay_data.discounts
+                if replay_data.discounts is not None
+                else self.gamma
+            )
+
+            with th.no_grad():
+                # Step 1: online Dueling network scores all actions at s'
+                online_next_q = self.q_net(replay_data.next_observations)
+                # Step 2: online network picks the best action (less biased)
+                best_actions = online_next_q.argmax(dim=1, keepdim=True)
+                # Step 3: target Dueling network scores all actions at s'
+                target_next_q = self.q_net_target(replay_data.next_observations)
+                # Step 4: target network evaluates only the online-selected action
+                next_q_values = target_next_q.gather(dim=1, index=best_actions)
+                # Step 5: mask terminals and compute TD target
+                target_q_values = (
+                        replay_data.rewards
+                        + (1 - replay_data.dones) * discounts * next_q_values
+                )
+
+            # current Q for the actions actually taken (Dueling forward)
+            current_q_values = self.q_net(replay_data.observations)
+            current_q_values = th.gather(
+                current_q_values, dim=1, index=replay_data.actions.long()
+            )
+
+            # Huber loss (same as SB3)
+            loss = F.smooth_l1_loss(current_q_values, target_q_values)
+            losses.append(loss.item())
+
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            self.policy.optimizer.step()
+
+        self._n_updates += gradient_steps
+        self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        self.logger.record("train/loss", np.mean(losses))
 
     # Return fully formatted output paths for a given update_frequency.
     @classmethod
