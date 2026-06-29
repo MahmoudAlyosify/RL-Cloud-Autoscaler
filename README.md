@@ -21,3 +21,55 @@ The goal is to learn a dynamic scaling policy that minimizes infrastructure cost
    ```bash
    git clone [https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git](https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git)
    cd RL-Cloud-Autoscaler
+   
+2. Create and activate the conda environment:
+    ```
+    conda env create -f environment.yml
+    conda activate rl-cloud-autoscaler
+
+## 🏃 Running the Scripts
+### Vanilla DQN (default)
+    python train_dqn.py
+
+### DQN variants
+    python train_dqn.py --variant double
+    python train_dqn.py --variant dueling
+    python train_dqn.py --variant double_dueling
+
+### Sparsity ablation studies
+    python train_dqn.py --variant vanilla --update_frequency 1
+    python train_dqn.py --variant vanilla --update_frequency 8
+
+
+### A2C variants
+python train_a2c.py --variant default
+python train_a2c.py --variant low_entropy
+python train_a2c.py --variant high_entropy
+python train_a2c.py --variant short_rollout
+python train_a2c.py --variant long_rollout
+
+### PPO-LSTM variants
+python train_recurrent_ppo.py --variant default
+python train_recurrent_ppo.py --variant hidden64
+python train_recurrent_ppo.py --variant hidden256
+python train_recurrent_ppo.py --variant short_sequence
+python train_recurrent_ppo.py --variant long_sequence
+
+
+pip install stable-baselines3 sb3-contrib gymnasium numpy matplotlib torch
+Then run training one after the other:
+python train_ppo.py --timesteps 2000000 --device auto
+python sparse_ppo.py --timesteps 500000 --device auto
+python train_dqn.py --variant double --timesteps 2000000 --device auto
+python train_dqn.py --variant dueling --timesteps 2000000 --device auto
+python train_dqn.py --variant double_dueling --timesteps 2000000 --device auto
+python train_a2c.py --timesteps 2000000 --device auto --seed 0
+python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
+After all training finishes, run evaluation:
+python run_baseline_eval.py
+python eval_agent.py --episodes 10 --seed 42
+If you added the comparison/stress-test files:
+python main_algorithm_comparison.py --eval-seeds 0,1,2,3,4 --episodes-per-seed 1
+python traffic_stress_test.py --seeds 0,1,2,3,4
+Then generate plots:
+python plot_results.py
