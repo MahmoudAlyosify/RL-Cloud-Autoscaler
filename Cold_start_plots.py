@@ -40,5 +40,5 @@ for metric,title in metrics:
 
     plt.tight_layout()
     c+=1
-    plt.savefig(f"results/plots/plot_{c}_{metric}_Cold_Start.png",dpi=300)
+    plt.savefig(f"results/Experments/plots_ex4/plot_{metric}_Cold_Start.png",dpi=300)
     plt.show()
