@@ -1,26 +1,13 @@
 """
 Traffic-stress test using the Adapter Design Pattern.
 
-here we evaluates the trained agents under three traffic conditions:
+Evaluates the final trained agents under three traffic conditions:
 
 1. Deterministic traffic
-   Smooth sinusoidal traffic only.
-   No Poisson randomness and no spikes.
-
 2. Poisson-only traffic
-   Smooth sinusoidal traffic with Poisson arrival randomness.
-   No random spikes.
-
 3. Bursty spike traffic
-   Poisson arrivals plus random traffic spikes.
 
-A good cloud autoscaling policy should not only work on one smooth workload.
-It should also handle randomness and sudden bursts. This test keeps the trained
-policy fixed and changes only the workload pattern.
-
-The adapter pattern is used so all agents can be evaluated using the same loop.
-This is important because PPO-LSTM needs recurrent memory, while normal SB3
-models and the rule-based baseline do not.
+The trained policies stay fixed. Only the workload pattern changes.
 """
 
 import argparse
@@ -31,17 +18,11 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from stable_baselines3 import A2C, PPO, DQN
+from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-# These imports make custom DQN policy classes available when loading models.
-import dueling_dqn  # noqa: F401
-import double_dueling_dqn  # noqa: F401
-
-from agent_adapters import SB3AgentAdapter, RecurrentPPOAdapter, BaselineAdapter
-from baseline_agent import RuleBasedBaseline
+from agent_adapters import SB3AgentAdapter, RecurrentPPOAdapter
 from env_factory import make_env
-from sparse_ppo import SparsePPO
 
 try:
     from sb3_contrib import RecurrentPPO
@@ -59,46 +40,16 @@ class ModelSpec:
 
 MODEL_SPECS = [
     ModelSpec(
-        "Vanilla DQN",
-        DQN,
-        "./models/best_vanilla_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_vanilla_dqn_freq4.pkl",
-    ),
-    ModelSpec(
-        "Double DQN",
-        DQN,
-        "./models/best_double_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_double_dqn_freq4.pkl",
-    ),
-    ModelSpec(
-        "Dueling DQN",
-        DQN,
-        "./models/best_dueling_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_dueling_dqn_freq4.pkl",
-    ),
-    ModelSpec(
-        "Double-Dueling DQN",
-        DQN,
-        "./models/best_double_dueling_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_double_dueling_dqn_freq4.pkl",
-    ),
-    ModelSpec(
         "PPO",
         PPO,
         "./models/best_ppo/best_model.zip",
         "./models/vecnormalize_ppo.pkl",
     ),
     ModelSpec(
-        "Sparse PPO K=4",
-        SparsePPO,
-        "./models/sparse_ppo_k4.zip",
-        "./models/vecnormalize_sparse_ppo_k4.pkl",
-    ),
-    ModelSpec(
-        "A2C",
+        "A2C Final",
         A2C,
-        "./models/best_a2c/best_model.zip",
-        "./models/vecnormalize_a2c.pkl",
+        "./models/best_final_a2c/best_model.zip",
+        "./models/best_final_a2c/vecnormalize.pkl",
     ),
 ]
 
@@ -131,8 +82,6 @@ def parse_seeds(seed_text):
 
 
 def make_eval_env(seed, vecnorm_path, env_kwargs):
-    """Create one evaluation environment for one traffic case."""
-
     env = DummyVecEnv([make_env(rank=0, seed=seed, **env_kwargs)])
 
     if vecnorm_path and os.path.exists(vecnorm_path):
@@ -144,8 +93,6 @@ def make_eval_env(seed, vecnorm_path, env_kwargs):
 
 
 def load_adapter(spec):
-    """Load a trained non-recurrent model and wrap it with an adapter."""
-
     if not os.path.exists(spec.model_path):
         print(f"[SKIP] {spec.name}: missing model {spec.model_path}")
         return None
@@ -159,14 +106,12 @@ def load_adapter(spec):
 
 
 def load_recurrent_ppo_adapter():
-    """Load PPO-LSTM and wrap it with the recurrent adapter."""
-
     if RecurrentPPO is None:
         print("[SKIP] PPO-LSTM: sb3-contrib is not installed.")
         return None, None
 
-    model_path = "./models/best_recurrent_ppo/best_model.zip"
-    vecnorm_path = "./models/vecnormalize_recurrent_ppo.pkl"
+    model_path = "./models/best_final_recurrent_ppo/best_model.zip"
+    vecnorm_path = "./models/best_final_recurrent_ppo/vecnormalize.pkl"
 
     if not os.path.exists(model_path):
         print(f"[SKIP] PPO-LSTM: missing model {model_path}")
@@ -177,12 +122,10 @@ def load_recurrent_ppo_adapter():
         return None, None
 
     model = RecurrentPPO.load(model_path)
-    return RecurrentPPOAdapter("PPO-LSTM", model), vecnorm_path
+    return RecurrentPPOAdapter("PPO-LSTM Final", model), vecnorm_path
 
 
 def run_episode(adapter, env, max_queue=500):
-    """Run one evaluation episode and collect cloud metrics."""
-
     obs = env.reset()
     done = np.array([False])
 
@@ -212,7 +155,6 @@ def run_episode(adapter, env, max_queue=500):
         total_cost += float(info["active"])
         total_dropped += float(info["dropped"])
         total_queue += float(info["queue"])
-
         steps += 1
 
     mean_queue = total_queue / max(1, steps)
@@ -246,7 +188,9 @@ def summarize(rows):
     for metric in metrics:
         values = np.array([row[metric] for row in rows], dtype=float)
         summary[f"{metric}_mean"] = float(values.mean())
-        summary[f"{metric}_std"] = float(values.std(ddof=1)) if len(values) > 1 else 0.0
+        summary[f"{metric}_std"] = (
+            float(values.std(ddof=1)) if len(values) > 1 else 0.0
+        )
 
     return summary
 
@@ -271,8 +215,6 @@ def write_json(path, data):
 
 
 def plot_grouped_metric(summary_rows, metric, out_dir):
-    """Plot one metric for all algorithms under all traffic cases."""
-
     algorithms = [row["algorithm"] for row in summary_rows]
     algorithms = list(dict.fromkeys(algorithms))
 
@@ -335,6 +277,115 @@ def plot_grouped_metric(summary_rows, metric, out_dir):
     plt.close()
 
 
+def plot_traffic_curve(summary_rows, metric, out_dir):
+    algorithms = list(dict.fromkeys(row["algorithm"] for row in summary_rows))
+    traffic_cases = list(TRAFFIC_CASES.keys())
+
+    lookup = {
+        (row["algorithm"], row["traffic_case"]): row
+        for row in summary_rows
+    }
+
+    x = np.arange(len(traffic_cases))
+
+    plt.figure(figsize=(10, 5))
+
+    for algorithm in algorithms:
+        means = []
+        stds = []
+
+        for traffic_case in traffic_cases:
+            row = lookup.get((algorithm, traffic_case))
+            if row is None:
+                means.append(np.nan)
+                stds.append(0.0)
+            else:
+                means.append(row[f"{metric}_mean"])
+                stds.append(row[f"{metric}_std"])
+
+        plt.errorbar(
+            x,
+            means,
+            yerr=stds,
+            marker="o",
+            linewidth=2,
+            capsize=4,
+            label=algorithm,
+        )
+
+    plt.xticks(x, traffic_cases, rotation=20, ha="right")
+    plt.ylabel(metric.replace("_", " "))
+    plt.title(f"Traffic degradation curve: {metric.replace('_', ' ')}")
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+
+    path = os.path.join(out_dir, f"{metric}_traffic_curve.png")
+    plt.savefig(path, dpi=200)
+    plt.close()
+
+
+def plot_all_traffic_curves(summary_rows, out_dir):
+    metrics = [
+        "return",
+        "latency_proxy",
+        "cost",
+        "dropped_requests",
+        "action_stability",
+    ]
+
+    algorithms = list(dict.fromkeys(row["algorithm"] for row in summary_rows))
+    traffic_cases = list(TRAFFIC_CASES.keys())
+
+    lookup = {
+        (row["algorithm"], row["traffic_case"]): row
+        for row in summary_rows
+    }
+
+    x = np.arange(len(traffic_cases))
+
+    fig, axes = plt.subplots(2, 3, figsize=(17, 9))
+    axes = axes.flatten()
+
+    for ax, metric in zip(axes, metrics):
+        for algorithm in algorithms:
+            means = []
+            stds = []
+
+            for traffic_case in traffic_cases:
+                row = lookup.get((algorithm, traffic_case))
+                if row is None:
+                    means.append(np.nan)
+                    stds.append(0.0)
+                else:
+                    means.append(row[f"{metric}_mean"])
+                    stds.append(row[f"{metric}_std"])
+
+            ax.errorbar(
+                x,
+                means,
+                yerr=stds,
+                marker="o",
+                linewidth=2,
+                capsize=3,
+                label=algorithm,
+            )
+
+        ax.set_title(metric.replace("_", " "))
+        ax.set_xticks(x)
+        ax.set_xticklabels(traffic_cases, rotation=20, ha="right")
+        ax.grid(alpha=0.3)
+
+    axes[-1].axis("off")
+    axes[0].legend(loc="best")
+    fig.suptitle("Traffic Stress Test Curves", fontsize=14)
+    fig.tight_layout()
+
+    path = os.path.join(out_dir, "all_traffic_curves.png")
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
 def print_summary(summary_rows):
     print("\n=== Traffic Stress Test Summary ===")
 
@@ -368,9 +419,6 @@ def main():
     seeds = parse_seeds(args.seeds)
 
     adapters_with_vecnorm = []
-
-    baseline_adapter = BaselineAdapter(RuleBasedBaseline())
-    adapters_with_vecnorm.append((baseline_adapter, None))
 
     for spec in MODEL_SPECS:
         adapter = load_adapter(spec)
@@ -431,6 +479,9 @@ def main():
         "action_stability",
     ]:
         plot_grouped_metric(summary_rows, metric, args.out_dir)
+        plot_traffic_curve(summary_rows, metric, args.out_dir)
+
+    plot_all_traffic_curves(summary_rows, args.out_dir)
 
     print_summary(summary_rows)
     print(f"\nSaved traffic stress-test results to: {args.out_dir}")
