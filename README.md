@@ -32,23 +32,10 @@ The goal is to learn a dynamic scaling policy that minimizes infrastructure cost
     python train_dqn.py
 
 ### DQN variants
+    # Just use default train_freq=1
     python train_dqn.py --variant double
     python train_dqn.py --variant dueling
     python train_dqn.py --variant double_dueling
-
-### Sparsity ablation studies
-    python train_dqn.py --variant vanilla --update_frequency 1
-    python train_dqn.py --variant vanilla --update_frequency 4
-    python train_dqn.py --variant vanilla --update_frequency 8
-    python train_dqn.py --variant double --update_frequency 1
-    python train_dqn.py --variant double --update_frequency 4
-    python train_dqn.py --variant double --update_frequency 8
-    python train_dqn.py --variant dueling --update_frequency 1
-    python train_dqn.py --variant dueling --update_frequency 4
-    python train_dqn.py --variant dueling --update_frequency 8
-    python train_dqn.py --variant double_dueling --update_frequency 1
-    python train_dqn.py --variant double_dueling --update_frequency 4
-    python train_dqn.py --variant double_dueling --update_frequency 8
     
 ### A2C variants
 python train_a2c.py --variant default
@@ -82,3 +69,40 @@ python main_algorithm_comparison.py --eval-seeds 0,1,2,3,4 --episodes-per-seed 1
 python traffic_stress_test.py --seeds 0,1,2,3,4
 Then generate plots:
 python plot_results.py
+
+
+## 🏃 Running Experiments' Scripts
+
+### Experiment 1: Sparsity ablation studies
+
+#### DQN Sparsity Ablation Training
+
+    python train_dqn.py --variant vanilla --update_frequency 1
+    python train_dqn.py --variant vanilla --update_frequency 4
+    python train_dqn.py --variant vanilla --update_frequency 8
+    python train_dqn.py --variant double --update_frequency 1
+    python train_dqn.py --variant double --update_frequency 4
+    python train_dqn.py --variant double --update_frequency 8
+    python train_dqn.py --variant dueling --update_frequency 1
+    python train_dqn.py --variant dueling --update_frequency 4
+    python train_dqn.py --variant dueling --update_frequency 8
+    python train_dqn.py --variant double_dueling --update_frequency 1
+    python train_dqn.py --variant double_dueling --update_frequency 4
+    python train_dqn.py --variant double_dueling --update_frequency 8
+
+<p style="color: red; font-weight: bold;">⚠️ Note: For the upcoming algorithms you must run the default training command first to generate the best optimized model then test sparsity effects.</p>
+    
+#### PPO Sparsity Ablation Training
+
+    python train_ppo.py --timesteps 2000000 --device auto
+    python sparse_ppo.py
+
+#### Recurrent PPO Sparsity Ablation Training
+
+    python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
+    python sparse_recurrent_ppo.py
+    
+#### AC2 Sparsity Ablation Training
+
+    python train_a2c.py --timesteps 2000000 --device auto --seed 0
+    python sparse_a2c.py
