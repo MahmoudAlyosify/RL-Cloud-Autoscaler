@@ -42,7 +42,7 @@ class SparsityPlotter:
         "royalblue", "mediumorchid", "darkcyan", "saddlebrown",
     ]
 
-    def __init__(self, eval_paths: dict, out_dir: str = "./results/plots/",
+    def __init__(self, eval_paths: dict, out_dir: str = "./results/Experments/plots_exp2/",
                 colors: dict = None):
         self.eval_paths = eval_paths
         self.out_dir    = out_dir
@@ -217,5 +217,5 @@ if __name__ == "__main__":
         ("A2C",                8): "./logs/sparse_a2c_k8_eval/evaluations.npz",
     }
 
-    plotter = SparsityPlotter(eval_paths, out_dir="./results/plots/")
+    plotter = SparsityPlotter(eval_paths, out_dir="./results/Experments/plots_exp2/")
     plotter.plot_all()
