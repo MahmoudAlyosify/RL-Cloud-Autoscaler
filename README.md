@@ -49,31 +49,17 @@ pip install stable-baselines3 sb3-contrib gymnasium numpy matplotlib torch
 ## 🏃 Running training scripts
 Below are common entrypoints. Customize flags (timesteps, device, seeds) as needed.
 
-- Train vanilla DQN (default):
+## 🏃 Running the Scripts
+### Vanilla DQN (default)
+    python train_dqn.py
 
-```bash
-python train_dqn.py
-```
-
-- DQN variants:
-
-```bash
-python train_dqn.py --variant double
-python train_dqn.py --variant dueling
-python train_dqn.py --variant double_dueling
-```
-
-- Sparsity / update frequency ablation (examples):
-
-```bash
-python train_dqn.py --variant vanilla --update_frequency 1
-python train_dqn.py --variant vanilla --update_frequency 4
-python train_dqn.py --variant vanilla --update_frequency 8
-```
-
-- A2C variants:
-
-```bash
+### DQN variants
+    # Just use default train_freq=1
+    python train_dqn.py --variant double
+    python train_dqn.py --variant dueling
+    python train_dqn.py --variant double_dueling
+    
+### A2C variants
 python train_a2c.py --variant default
 python train_a2c.py --variant low_entropy
 python train_a2c.py --variant high_entropy
@@ -124,3 +110,40 @@ Maintainer: MahmoudAlyosify
 ---
 
 (README updated to fix formatting, expand installation and usage instructions, and add a clearer project overview. If you want the README in Arabic or you want specific details added to reflect exact code changes you made, tell me what changed and I'll update the README further.)
+
+
+## 🏃 Running Experiments' Scripts
+
+### Experiment 1: Sparsity ablation studies
+
+#### DQN Sparsity Ablation Training
+
+    python train_dqn.py --variant vanilla --update_frequency 1
+    python train_dqn.py --variant vanilla --update_frequency 4
+    python train_dqn.py --variant vanilla --update_frequency 8
+    python train_dqn.py --variant double --update_frequency 1
+    python train_dqn.py --variant double --update_frequency 4
+    python train_dqn.py --variant double --update_frequency 8
+    python train_dqn.py --variant dueling --update_frequency 1
+    python train_dqn.py --variant dueling --update_frequency 4
+    python train_dqn.py --variant dueling --update_frequency 8
+    python train_dqn.py --variant double_dueling --update_frequency 1
+    python train_dqn.py --variant double_dueling --update_frequency 4
+    python train_dqn.py --variant double_dueling --update_frequency 8
+
+<p style="color: red; font-weight: bold;">⚠️ Note: For the upcoming algorithms you must run the default training command first to generate the best optimized model then test sparsity effects.</p>
+    
+#### PPO Sparsity Ablation Training
+
+    python train_ppo.py --timesteps 2000000 --device auto
+    python sparse_ppo.py
+
+#### Recurrent PPO Sparsity Ablation Training
+
+    python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
+    python sparse_recurrent_ppo.py
+    
+#### AC2 Sparsity Ablation Training
+
+    python train_a2c.py --timesteps 2000000 --device auto --seed 0
+    python sparse_a2c.py

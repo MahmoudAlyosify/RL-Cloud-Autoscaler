@@ -1,10 +1,3 @@
-"""
-DQN Hyperparameter Optimization for All Variants
-================================================
-Optimizes Vanilla, Double DQN variants
-using Optuna with early pruning and variant-specific search spaces.
-"""
-
 import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
@@ -17,8 +10,8 @@ from typing import Dict, Any, Optional
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-from vanilla_dqn import VanillaDQN
-from double_dqn import DoubleDQN
+from dueling_dqn import DuelingDQN
+from double_dueling_dqn import DoubleDuelingDQN
 from env_factory import make_env, make_vec_env
 
 warnings.filterwarnings("ignore")
@@ -28,16 +21,16 @@ warnings.filterwarnings("ignore")
 # --------------------------------------------------
 
 VARIANT_MAP = {
-    "vanilla": VanillaDQN,
-    "double": DoubleDQN,
+    "dueling": DuelingDQN,
+    "double_dueling": DoubleDuelingDQN,
 }
 
 VARIANT_NAMES = {
-    "vanilla": "Vanilla DQN",
-    "double": "Double DQN",
+    "dueling": "Dueling DQN",
+    "double_dueling": "Double + Dueling DQN",
 }
 
-# Base hyperparameters that are shared across all variants
+# Base hyperparameters that are shared across both variants
 BASE_HYPERPARAMS = {
     "buffer_size": 100_000,
     "learning_starts": 10_000,
@@ -49,23 +42,8 @@ BASE_HYPERPARAMS = {
 
 # Variant-specific parameter ranges
 VARIANT_SEARCH_SPACES = {
-    "vanilla": {
+    "dueling": {
         "learning_rate": (1e-5, 1e-3),
-        "target_update_interval": [100, 500, 1000, 2000],
-        "batch_size": [32, 64, 128, 256],
-        "exploration_fraction": (0.05, 0.5),
-        "exploration_initial_eps": (0.5, 1.0),
-        "exploration_final_eps": (0.01, 0.1),
-        "net_arch": [
-            [128, 128],
-            [256, 256],
-            [512, 512],
-            [128, 256, 128],
-            [256, 128, 256]
-        ],
-    },
-    "double": {
-        "learning_rate": (1e-5, 1e-2),  # Double DQN can handle higher LR
         "target_update_interval": [500, 1000, 2000, 5000],
         "batch_size": [32, 64, 128, 256],
         "exploration_fraction": (0.05, 0.5),
@@ -76,28 +54,116 @@ VARIANT_SEARCH_SPACES = {
             [256, 256],
             [512, 512],
             [128, 256, 128],
-            [256, 128, 256]
+            [256, 128, 256],
+            [256, 512, 256],  # Dueling benefits from deeper networks
         ],
-    }
+    },
+    "double_dueling": {
+        "learning_rate": (1e-5, 1e-2),
+        "target_update_interval": [500, 1000, 2000, 5000],
+        "batch_size": [32, 64, 128, 256],
+        "exploration_fraction": (0.05, 0.5),
+        "exploration_initial_eps": (0.5, 1.0),
+        "exploration_final_eps": (0.01, 0.1),
+        "net_arch": [
+            [128, 128],
+            [256, 256],
+            [512, 512],
+            [128, 256, 128],
+            [256, 128, 256],
+            [256, 512, 256],
+        ],
+    },
 }
 
+WARM_START_PARAMS = [
+    # Best Double DQN trial (-5143.97) - strongest overall result
+    {
+        "learning_rate": 0.00010927879883233762,
+        "target_update_interval": 1000,
+        "batch_size": 256,
+        "exploration_fraction": 0.12507445265541792,
+        "exploration_initial_eps": 0.9292317317572214,
+        "exploration_final_eps": 0.08358632912993018,
+        "net_arch": [512, 512],
+        "gamma": 0.9654786631566694,
+        "learning_starts": 1000,
+        "train_freq": 8,
+        "gradient_steps": 1,
+        "buffer_size": 1000000,
+    },
+    # Best Vanilla DQN trial (-8474.83)
+    {
+        "learning_rate": 8.42665034538258e-05,
+        "target_update_interval": 1000,
+        "batch_size": 128,
+        "exploration_fraction": 0.21573775929604358,
+        "exploration_initial_eps": 0.9485296583267736,
+        "exploration_final_eps": 0.025018757601193223,
+        "net_arch": [128, 256, 128],
+        "gamma": 0.9907466921420781,
+        "learning_starts": 5000,
+        "train_freq": 8,
+        "gradient_steps": 1,
+        "buffer_size": 500000,
+    },
+    {
+        "learning_rate": 6.246073681318086e-05,
+        "target_update_interval": 1000,
+        "batch_size": 64,
+        "exploration_fraction": 0.27163296221848876,
+        "exploration_initial_eps": 0.5976214938990223,
+        "exploration_final_eps": 0.07502069037353548,
+        "net_arch": [256, 128, 256],
+        "gamma": 0.9967425002731268,
+        "learning_starts": 1000,
+        "train_freq": 8,
+        "gradient_steps": 1,
+        "buffer_size": 1000000,
+    },
+    {
+        "learning_rate": 5.527657643435907e-05,
+        "target_update_interval": 2000,
+        "batch_size": 128,
+        "exploration_fraction": 0.1126944221337712,
+        "exploration_initial_eps": 0.6584533293940609,
+        "exploration_final_eps": 0.06181433591175487,
+        "net_arch": [128, 128],
+        "gamma": 0.9756782509256635,
+        "learning_starts": 1000,
+        "train_freq": 8,
+        "gradient_steps": 8,
+        "buffer_size": 100000,
+    },
+]
 
-# --------------------------------------------------
-# Objective Function Factory
-# --------------------------------------------------
+# Trimmed combos: dropped (1, 8), (1, 16), (4, 16)
+TRAIN_FREQ_OPTIONS = [1, 4, 8]
+GRADIENT_STEPS_OPTIONS = [1, 4, 8]
 
-def create_objective(variant: str, eval_freq: int = 50_000, total_steps: int = 500_000):
+
+def create_objective(
+        variant: str,
+        eval_freq: int = 50_000,
+        total_steps: int = 300_000,
+        n_eval_episodes_search: int = 3,
+        n_eval_episodes_final: int = 5,
+):
     """
     Create objective function for a specific DQN variant.
 
     Parameters
     ----------
     variant : str
-        One of: vanilla, double dqn
+        One of: dueling, double_dueling
     eval_freq : int
         How often to evaluate during training (for pruning)
     total_steps : int
-        Total training steps per trial
+        Total training steps per trial (search budget, not final training)
+    n_eval_episodes_search : int
+        Episodes used at each pruning checkpoint (kept low for speed)
+    n_eval_episodes_final : int
+        Episodes used for the final, more thorough evaluation
     """
 
     AgentClass = VARIANT_MAP[variant]
@@ -144,8 +210,10 @@ def create_objective(variant: str, eval_freq: int = 50_000, total_steps: int = 5
             "learning_starts",
             [1000, 5000, 10000]
         )
-        train_freq = trial.suggest_categorical("train_freq", [1, 4, 8, 16])
-        gradient_steps = trial.suggest_categorical("gradient_steps", [1, 4, 8, 16])
+        # Trimmed vs. the vanilla/double script - drops the most
+        # expensive train_freq/gradient_steps combos.
+        train_freq = trial.suggest_categorical("train_freq", TRAIN_FREQ_OPTIONS)
+        gradient_steps = trial.suggest_categorical("gradient_steps", GRADIENT_STEPS_OPTIONS)
         buffer_size = trial.suggest_categorical("buffer_size", [100_000, 500_000, 1_000_000])
 
         # Training environment (single env for DQN)
@@ -203,11 +271,11 @@ def create_objective(variant: str, eval_freq: int = 50_000, total_steps: int = 5
                 progress_bar=False
             )
 
-            # Evaluate
+            # Evaluate (fewer episodes than the vanilla/double script)
             mean_reward, _ = evaluate_policy(
                 model,
                 eval_env,
-                n_eval_episodes=5,
+                n_eval_episodes=n_eval_episodes_search,
                 deterministic=True
             )
 
@@ -227,11 +295,11 @@ def create_objective(variant: str, eval_freq: int = 50_000, total_steps: int = 5
             # Optional: print progress
             print(f"  Step {step_idx + 1}/{n_evaluations}: Reward = {mean_reward:.2f}")
 
-        # More thorough evaluation at the end
+        # More thorough evaluation at the end (still trimmed vs. 10)
         final_reward, final_std = evaluate_policy(
             model,
             eval_env,
-            n_eval_episodes=10,
+            n_eval_episodes=n_eval_episodes_final,
             deterministic=True
         )
 
@@ -244,37 +312,30 @@ def create_objective(variant: str, eval_freq: int = 50_000, total_steps: int = 5
     return objective
 
 
-# --------------------------------------------------
-# Optimization Manager
-# --------------------------------------------------
 
-class DQNOptimizer:
-    """Manages optimization for all DQN variants."""
+class DuelingDQNOptimizer:
+    """Manages optimization for the dueling-family DQN variants."""
 
     def __init__(
             self,
-            n_trials_per_variant: int = 25,
-            total_timesteps: int = 500_000,
+            n_trials_per_variant: int = 15,
+            total_timesteps: int = 300_000,
             eval_freq: int = 50_000,
-            output_dir: str = "optimization_results"
+            n_eval_episodes_search: int = 3,
+            n_eval_episodes_final: int = 5,
+            output_dir: str = "optimization_results_dueling"
     ):
         self.n_trials_per_variant = n_trials_per_variant
         self.total_timesteps = total_timesteps
         self.eval_freq = eval_freq
+        self.n_eval_episodes_search = n_eval_episodes_search
+        self.n_eval_episodes_final = n_eval_episodes_final
         self.output_dir = output_dir
         self.results = {}
 
         os.makedirs(output_dir, exist_ok=True)
 
     def optimize_variant(self, variant: str) -> Dict[str, Any]:
-        """
-        Run optimization for a single variant.
-
-        Returns
-        -------
-        Dict containing best parameters and results.
-        """
-
         print("\n" + "=" * 70)
         print(f"OPTIMIZING: {VARIANT_NAMES[variant]}")
         print("=" * 70)
@@ -288,7 +349,7 @@ class DQNOptimizer:
         sampler = TPESampler(seed=42)
         pruner = MedianPruner(
             n_startup_trials=5,
-            n_warmup_steps=2,
+            n_warmup_steps=1,
             interval_steps=1
         )
 
@@ -300,11 +361,19 @@ class DQNOptimizer:
             storage=None  # In-memory storage
         )
 
+        # Warm-start with strong configs found for vanilla/double DQN.
+        # skip_if_exists guards against duplicate enqueues if this
+        # method is ever called twice on the same study.
+        for params in WARM_START_PARAMS:
+            study.enqueue_trial(params, skip_if_exists=True)
+
         # Create objective
         objective = create_objective(
             variant=variant,
             eval_freq=self.eval_freq,
-            total_steps=self.total_timesteps
+            total_steps=self.total_timesteps,
+            n_eval_episodes_search=self.n_eval_episodes_search,
+            n_eval_episodes_final=self.n_eval_episodes_final,
         )
 
         # Run optimization
@@ -342,12 +411,12 @@ class DQNOptimizer:
         return result
 
     def optimize_all(self):
-        """Run optimization for all DQN variants."""
+        """Run optimization for both dueling-family variants."""
 
         print("=" * 70)
-        print("DQN VARIANTS HYPERPARAMETER OPTIMIZATION")
+        print("DUELING DQN VARIANTS HYPERPARAMETER OPTIMIZATION")
         print("=" * 70)
-        print(f"Total trials across all variants: {len(VARIANT_MAP) * self.n_trials_per_variant}")
+        print(f"Total trials across both variants: {len(VARIANT_MAP) * self.n_trials_per_variant}")
         print(f"Total training steps: {len(VARIANT_MAP) * self.n_trials_per_variant * self.total_timesteps:,}")
         print("=" * 70)
 
@@ -360,7 +429,7 @@ class DQNOptimizer:
     def save_results(self, filename: str = None):
         """Save optimization results to JSON."""
         if filename is None:
-            filename = os.path.join(self.output_dir, "dqn_optimization_results.json")
+            filename = os.path.join(self.output_dir, "dueling_dqn_optimization_results.json")
 
         with open(filename, "w") as f:
             json.dump(self.results, f, indent=2)
@@ -407,14 +476,6 @@ class DQNOptimizer:
         return best_variant, self.results[best_variant]
 
     def train_best_model(self, total_steps: int = 1_000_000):
-        """
-        Train the best performing variant with its optimal parameters.
-
-        Parameters
-        ----------
-        total_steps : int
-            Total timesteps for final training.
-        """
         best_variant, best_data = self.get_best_variant()
         AgentClass = VARIANT_MAP[best_variant]
 
@@ -497,24 +558,24 @@ class DQNOptimizer:
         return model, mean_reward
 
 
+# Main
 if __name__ == "__main__":
     # Initialize optimizer
-    optimizer = DQNOptimizer(
-        n_trials_per_variant=25,  # 25 trials per variant
-        total_timesteps=500_000,  # 500k steps per trial
-        eval_freq=50_000,  # Evaluate every 50k steps
-        output_dir="optimization_results"
+    optimizer = DuelingDQNOptimizer(
+        n_trials_per_variant=15,   # fewer trials than vanilla/double (was 25)
+        total_timesteps=300_000,   # smaller search budget (was 500k)
+        eval_freq=50_000,          # same eval frequency
+        n_eval_episodes_search=3,  # fewer episodes per checkpoint (was 5)
+        n_eval_episodes_final=5,   # fewer episodes at trial end (was 10)
+        output_dir="optimization_results_dueling"
     )
 
-    # Run all optimizations
+    # Run optimization for both dueling variants
     optimizer.optimize_all()
 
     # Save and print results
     optimizer.save_results()
     optimizer.print_summary()
-
-    # Optional: Train the best model
-    # optimizer.train_best_model(total_steps=1_000_000)
 
     print("\n" + "=" * 70)
     print("OPTIMIZATION COMPLETE")

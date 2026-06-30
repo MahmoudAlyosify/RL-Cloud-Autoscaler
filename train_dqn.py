@@ -22,21 +22,70 @@ VARIANT_MAP = {
     "double_dueling": DoubleDuelingDQN,
 }
 
-DQN_HYPERPARAMS = dict(
-    learning_rate=1e-4,
-    buffer_size=100_000,
-    learning_starts=10_000,
-    batch_size=256,
-    tau=1.0,
-    gamma=0.99,
-    train_freq=1,
-    gradient_steps=1,
-    target_update_interval=1000,
-    exploration_fraction=0.1,
-    exploration_initial_eps=1.0,
-    exploration_final_eps=0.05,
-    policy_kwargs=dict(net_arch=[256, 256]),
-)
+# Per-variant tuned hyperparameters, pulled from each variant's best Optuna trial (dqn_optimization_results.json, dueling_dqn_optimization_results.json).
+VARIANT_HYPERPARAMS = {
+    "vanilla": dict(
+        learning_rate=8.42665034538258e-05,
+        buffer_size=500_000,
+        learning_starts=5_000,
+        batch_size=128,
+        tau=1.0,
+        gamma=0.9907466921420781,
+        train_freq=8,
+        gradient_steps=16,
+        target_update_interval=1000,
+        exploration_fraction=0.21573775929604358,
+        exploration_initial_eps=0.9485296583267736,
+        exploration_final_eps=0.025018757601193223,
+        policy_kwargs=dict(net_arch=[128, 256, 128]),
+    ),
+    "double": dict(
+        learning_rate=0.00010927879883233762,
+        buffer_size=1_000_000,
+        learning_starts=1_000,
+        batch_size=256,
+        tau=1.0,
+        gamma=0.9654786631566694,
+        train_freq=8,
+        gradient_steps=1,
+        target_update_interval=1000,
+        exploration_fraction=0.12507445265541792,
+        exploration_initial_eps=0.9292317317572214,
+        exploration_final_eps=0.08358632912993018,
+        policy_kwargs=dict(net_arch=[512, 512]),
+    ),
+    # TODO: replace with tuned values once the dueling-family
+    "dueling": dict(
+        learning_rate=1e-4,
+        buffer_size=100_000,
+        learning_starts=10_000,
+        batch_size=256,
+        tau=1.0,
+        gamma=0.99,
+        train_freq=1,
+        gradient_steps=1,
+        target_update_interval=1000,
+        exploration_fraction=0.1,
+        exploration_initial_eps=1.0,
+        exploration_final_eps=0.05,
+        policy_kwargs=dict(net_arch=[256, 256]),
+    ),
+    "double_dueling": dict(
+        learning_rate=1e-4,
+        buffer_size=100_000,
+        learning_starts=10_000,
+        batch_size=256,
+        tau=1.0,
+        gamma=0.99,
+        train_freq=1,
+        gradient_steps=1,
+        target_update_interval=1000,
+        exploration_fraction=0.1,
+        exploration_initial_eps=1.0,
+        exploration_final_eps=0.05,
+        policy_kwargs=dict(net_arch=[256, 256]),
+    ),
+}
 
 
 def parse_args():
@@ -56,6 +105,7 @@ def main():
     args = parse_args()
 
     AgentClass = VARIANT_MAP[args.variant]
+    hyperparams = VARIANT_HYPERPARAMS[args.variant]
     paths = AgentClass.get_paths(args.update_frequency)
 
     for key in ["best_model", "checkpoint", "log_dir", "eval_log"]:
@@ -77,7 +127,7 @@ def main():
         tensorboard_log=paths["log_dir"],
         device=args.device,
         verbose=1,
-        **DQN_HYPERPARAMS,
+        **hyperparams,
     )
 
     eval_cb = EvalCallback(
