@@ -1,0 +1,20 @@
+{
+  "selected_variant": "A2C Cost-Aware",
+  "family": "A2C",
+  "selection_rule": "best_overall_score_within_same_family",
+  "original_model_path": "./models/best_a2c_cost_aware/best_model.zip",
+  "original_vecnorm_path": "./models/vecnormalize_a2c_cost_aware.pkl",
+  "saved_model_path": "./models/best_final_a2c/best_model.zip",
+  "saved_vecnorm_path": "./models/best_final_a2c/vecnormalize.pkl",
+  "return_mean": -3385.740596246719,
+  "return_std": 627.565341315551,
+  "cost_mean": 3132.8,
+  "cost_std": 169.3552479257729,
+  "dropped_requests_mean": 11.8,
+  "dropped_requests_std": 25.830214865540704,
+  "latency_proxy_mean": 0.040706,
+  "latency_proxy_std": 0.006563175603318868,
+  "action_stability_mean": 0.7579579579579581,
+  "action_stability_std": 0.006766944456919167,
+  "overall_score": 0.7762437343882727
+}
