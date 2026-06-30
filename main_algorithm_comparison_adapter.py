@@ -1,3 +1,4 @@
+
 """
 Main algorithm comparison using the Adapter Design Pattern.
 
@@ -5,15 +6,9 @@ We here evaluates all trained agents on the same environment settings and
 the same traffic seeds.
 
 Algorithms included:
-- Rule-based baseline
-- Vanilla DQN
-- Double DQN
-- Dueling DQN
-- Double-Dueling DQN
 - PPO
-- Sparse PPO
-- A2C
-- PPO-LSTM
+- Final A2C
+- Final PPO-LSTM
 
 Metrics:
 - return
@@ -34,17 +29,11 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from stable_baselines3 import A2C, PPO, DQN
+from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-# These imports are useful when loading saved custom DQN policies.
-import dueling_dqn  # noqa: F401
-import double_dueling_dqn  # noqa: F401
-
-from agent_adapters import SB3AgentAdapter, RecurrentPPOAdapter, BaselineAdapter
-from baseline_agent import RuleBasedBaseline
+from agent_adapters import SB3AgentAdapter, RecurrentPPOAdapter
 from env_factory import make_env
-from sparse_ppo import SparsePPO
 
 try:
     from sb3_contrib import RecurrentPPO
@@ -62,46 +51,16 @@ class ModelSpec:
 
 MODEL_SPECS = [
     ModelSpec(
-        "Vanilla DQN",
-        DQN,
-        "./models/best_vanilla_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_vanilla_dqn_freq4.pkl",
-    ),
-    ModelSpec(
-        "Double DQN",
-        DQN,
-        "./models/best_double_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_double_dqn_freq4.pkl",
-    ),
-    ModelSpec(
-        "Dueling DQN",
-        DQN,
-        "./models/best_dueling_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_dueling_dqn_freq4.pkl",
-    ),
-    ModelSpec(
-        "Double-Dueling DQN",
-        DQN,
-        "./models/best_double_dueling_dqn_freq4/best_model.zip",
-        "./models/vecnormalize_double_dueling_dqn_freq4.pkl",
-    ),
-    ModelSpec(
         "PPO",
         PPO,
         "./models/best_ppo/best_model.zip",
         "./models/vecnormalize_ppo.pkl",
     ),
     ModelSpec(
-        "Sparse PPO K=4",
-        SparsePPO,
-        "./models/sparse_ppo_k4.zip",
-        "./models/vecnormalize_sparse_ppo_k4.pkl",
-    ),
-    ModelSpec(
-        "A2C",
+        "A2C Final",
         A2C,
-        "./models/best_a2c/best_model.zip",
-        "./models/vecnormalize_a2c.pkl",
+        "./models/best_final_a2c/best_model.zip",
+        "./models/best_final_a2c/vecnormalize.pkl",
     ),
 ]
 
@@ -139,8 +98,8 @@ def load_recurrent_ppo_adapter():
         print("[SKIP] PPO-LSTM: sb3-contrib is not installed.")
         return None, None
 
-    model_path = "./models/best_recurrent_ppo/best_model.zip"
-    vecnorm_path = "./models/vecnormalize_recurrent_ppo.pkl"
+    model_path = "./models/best_final_recurrent_ppo/best_model.zip"
+    vecnorm_path = "./models/best_final_recurrent_ppo/vecnormalize.pkl"
 
     if not os.path.exists(model_path):
         print(f"[SKIP] PPO-LSTM: missing model {model_path}")
@@ -151,7 +110,7 @@ def load_recurrent_ppo_adapter():
         return None, None
 
     model = RecurrentPPO.load(model_path)
-    return RecurrentPPOAdapter("PPO-LSTM", model), vecnorm_path
+    return RecurrentPPOAdapter("PPO-LSTM Final", model), vecnorm_path
 
 
 def run_episode(adapter, env, max_queue=500):
@@ -259,6 +218,61 @@ def plot_metric(summary_rows, metric, out_dir):
     plt.close()
 
 
+def plot_metric_by_seed(episode_rows, metric, out_dir):
+    algorithms = sorted({row["algorithm"] for row in episode_rows})
+
+    plt.figure(figsize=(10, 5))
+    for algorithm in algorithms:
+        rows = sorted(
+            [row for row in episode_rows if row["algorithm"] == algorithm],
+            key=lambda row: row["seed"],
+        )
+        seeds = [row["seed"] for row in rows]
+        values = [row[metric] for row in rows]
+        plt.plot(seeds, values, marker="o", linewidth=2, label=algorithm)
+
+    plt.xlabel("Evaluation traffic seed")
+    plt.ylabel(metric.replace("_", " "))
+    plt.title(f"Per-seed comparison: {metric.replace('_', ' ')}")
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+
+    path = os.path.join(out_dir, f"{metric}_by_seed.png")
+    plt.savefig(path, dpi=200)
+    plt.close()
+
+
+def plot_combined_metrics(summary_rows, out_dir):
+    metrics = [
+        "return",
+        "latency_proxy",
+        "cost",
+        "dropped_requests",
+        "action_stability",
+    ]
+
+    names = [row["algorithm"] for row in summary_rows]
+    fig, axes = plt.subplots(2, 3, figsize=(16, 9))
+    axes = axes.flatten()
+
+    for ax, metric in zip(axes, metrics):
+        means = [row[f"{metric}_mean"] for row in summary_rows]
+        stds = [row[f"{metric}_std"] for row in summary_rows]
+        ax.bar(names, means, yerr=stds, capsize=4)
+        ax.set_title(metric.replace("_", " "))
+        ax.tick_params(axis="x", rotation=25)
+        ax.grid(axis="y", alpha=0.3)
+
+    axes[-1].axis("off")
+    fig.suptitle("Final Model Comparison Summary", fontsize=14)
+    fig.tight_layout()
+
+    path = os.path.join(out_dir, "all_metrics_summary.png")
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
 def print_summary(summary_rows):
     print("\n=== Main Algorithm Comparison ===")
 
@@ -295,9 +309,6 @@ def main():
     summary_rows = []
 
     adapters_with_vecnorm = []
-
-    baseline_adapter = BaselineAdapter(RuleBasedBaseline())
-    adapters_with_vecnorm.append((baseline_adapter, None))
 
     for spec in MODEL_SPECS:
         adapter = load_adapter(spec)
@@ -346,6 +357,9 @@ def main():
         "action_stability",
     ]:
         plot_metric(summary_rows, metric, args.out_dir)
+        plot_metric_by_seed(all_episode_rows, metric, args.out_dir)
+
+    plot_combined_metrics(summary_rows, args.out_dir)
 
     print_summary(summary_rows)
     print(f"\nSaved results to: {args.out_dir}")

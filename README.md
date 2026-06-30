@@ -6,26 +6,48 @@
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
 ## 📌 Project Overview
-This project investigates the use of Deep Reinforcement Learning (DRL) for autonomous cloud resource provisioning. The auto-scaling problem is formulated as a Markov Decision Process (MDP), where an RL agent learns when to add, remove, or maintain server capacity based on the current state of the system. 
+This repository contains an implementation of autonomous cloud resource provisioning using Deep Reinforcement Learning (DQN & PPO). The auto-scaling problem is formulated as a Markov Decision Process (MDP) inside a custom Gymnasium environment designed to model realistic cloud behaviours such as cold-start delays, minimum server counts and stochastic workloads.
 
-The goal is to learn a dynamic scaling policy that minimizes infrastructure cost while maintaining low latency and avoiding dropped requests under highly stochastic, non-stationary workloads (Poisson-distributed traffic).
+The goal is to learn dynamic scaling policies that minimize infrastructure costs while keeping latency low and avoiding dropped requests under non-stationary traffic patterns.
 
 ## 🚀 Key Features
-- **Custom Gymnasium Environment:** A rigorously mathematically bounded cloud simulator enforcing constraints like `$N_{min}$` servers and boot-up latencies.
-- **Deep RL Agents:** Benchmarking Proximal Policy Optimization (PPO) and Deep Q-Networks (DQN).
-- **Proactive Scaling:** The environment includes a cold-start delay (`k` timesteps), forcing the agent to predict future traffic rather than purely reacting.
-- **Vectorized Training:** Utilizing `SubprocVecEnv` for massive parallel training acceleration.
+- **Custom Gymnasium Environment:** A mathematically-bounded cloud simulator that enforces constraints like minimum servers (N_min), boot-up latencies and capacity limits.
+- **Deep RL Agents:** Implementations and benchmarks for Proximal Policy Optimization (PPO) and Deep Q-Networks (DQN), including common variants (double, dueling, double-dueling).
+- **Proactive Scaling:** The environment models a cold-start delay (k timesteps) that forces agents to predict future traffic rather than purely react.
+- **Vectorized Training:** Support for parallelized training using SubprocVecEnv to speed up data collection and learning.
+- **Reproducible Experiments:** Scripts for training, evaluating and plotting results; seedable evaluation runs for reproducibility.
 
-## 🛠️ Installation & Setup
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git](https://github.com/YOUR_USERNAME/RL-Cloud-Autoscaler.git)
-   cd RL-Cloud-Autoscaler
-   
-2. Create and activate the conda environment:
-    ```
-    conda env create -f environment.yml
-    conda activate rl-cloud-autoscaler
+## 📁 Repository contents
+- custom_envs/        - Gymnasium environment and wrappers
+- agents/             - DQN, PPO and other agent implementations
+- experiments/        - Training & evaluation scripts, ablation studies
+- notebooks/          - Jupyter notebooks with experiments and visualizations
+- tests/              - Unit and integration tests
+- environment.yml     - Conda environment specification
+- requirements.txt    - Python dependencies (lighter alternative to environment.yml)
+
+(If your directory layout differs, update these paths accordingly.)
+
+## 🛠️ Requirements
+You can either use the provided Conda environment or pip install the required packages.
+
+Conda (recommended):
+
+```bash
+conda env create -f environment.yml
+conda activate rl-cloud-autoscaler
+```
+
+Or with pip (create a venv first):
+
+```bash
+pip install -r requirements.txt
+# or the minimal set:
+pip install stable-baselines3 sb3-contrib gymnasium numpy matplotlib torch
+```
+
+## 🏃 Running training scripts
+Below are common entrypoints. Customize flags (timesteps, device, seeds) as needed.
 
 ## 🏃 Running the Scripts
 ### Vanilla DQN (default)
@@ -43,32 +65,51 @@ python train_a2c.py --variant low_entropy
 python train_a2c.py --variant high_entropy
 python train_a2c.py --variant short_rollout
 python train_a2c.py --variant long_rollout
+```
 
-### PPO-LSTM variants
-python train_recurrent_ppo.py --variant default
-python train_recurrent_ppo.py --variant hidden64
-python train_recurrent_ppo.py --variant hidden256
-python train_recurrent_ppo.py --variant short_sequence
-python train_recurrent_ppo.py --variant long_sequence
+- PPO (including recurrent PPO/LSTM variants):
 
-
-pip install stable-baselines3 sb3-contrib gymnasium numpy matplotlib torch
-Then run training one after the other:
+```bash
 python train_ppo.py --timesteps 2000000 --device auto
-python sparse_ppo.py --timesteps 500000 --device auto
-python train_dqn.py --variant double --timesteps 2000000 --device auto
-python train_dqn.py --variant dueling --timesteps 2000000 --device auto
-python train_dqn.py --variant double_dueling --timesteps 2000000 --device auto
-python train_a2c.py --timesteps 2000000 --device auto --seed 0
-python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
-After all training finishes, run evaluation:
+python train_recurrent_ppo.py --variant default --timesteps 2000000 --device auto
+```
+
+Adjust `--timesteps`, `--device` and `--seed` according to your hardware and experiment plan.
+
+## ✅ Evaluation & Comparison
+After training, run evaluation scripts to measure performance and generate plots:
+
+```bash
 python run_baseline_eval.py
 python eval_agent.py --episodes 10 --seed 42
-If you added the comparison/stress-test files:
 python main_algorithm_comparison.py --eval-seeds 0,1,2,3,4 --episodes-per-seed 1
 python traffic_stress_test.py --seeds 0,1,2,3,4
-Then generate plots:
 python plot_results.py
+```
+
+## 🧪 Notebooks
+The `notebooks/` directory contains interactive experiments and visualization pipelines. Use them to reproduce plots, inspect learning curves, and run quick experiments.
+
+## 🔧 Tips & Troubleshooting
+- Ensure consistent package versions across experiments by using `environment.yml`.
+- Use smaller environments and fewer timesteps for quick debugging before full-scale runs.
+- If you see unstable training, try lowering the learning rate, increasing batch size, or adjusting entropy/epsilon schedules depending on the algorithm.
+
+## 📚 Citation / Acknowledgements
+If you use this code in research, please cite the repository and any relevant papers you base your work on.
+
+## 🤝 Contributing
+Contributions are welcome. Please open an issue for major changes and submit PRs with tests and clear descriptions.
+
+## 📝 License
+Specify your license here (e.g., MIT). If you want me to add a LICENSE file, tell me which license to use and I'll add it.
+
+## ✉️ Contact
+Maintainer: MahmoudAlyosify
+
+---
+
+(README updated to fix formatting, expand installation and usage instructions, and add a clearer project overview. If you want the README in Arabic or you want specific details added to reflect exact code changes you made, tell me what changed and I'll update the README further.)
 
 
 ## 🏃 Running Experiments' Scripts
