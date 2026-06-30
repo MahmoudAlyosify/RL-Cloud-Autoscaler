@@ -1,20 +1,19 @@
 """
 Main algorithm comparison using the Adapter Design Pattern.
 
-This script evaluates all trained agents on the same cloud environment,
-same traffic seeds, same state space, same reward function, and same action
-limits.
+We here evaluates all trained agents on the same environment settings and
+the same traffic seeds.
 
 Algorithms included:
+- Rule-based baseline
 - Vanilla DQN
 - Double DQN
 - Dueling DQN
 - Double-Dueling DQN
 - PPO
 - Sparse PPO
-- PPO-LSTM / Recurrent PPO
 - A2C
-- Rule-based baseline
+- PPO-LSTM
 
 Metrics:
 - return
@@ -23,11 +22,8 @@ Metrics:
 - dropped requests
 - action stability
 
-Important note about latency:
-The current CloudScaling-v1 environment does not track individual request
-waiting time. Because of that, latency is reported as a proxy using normalized
-queue occupancy. 
-Higher queue occupancy means requests are waiting longer.
+Latency note:The environment does not track individual request waiting time, so latency is
+approximated using normalized queue occupancy.
 """
 
 import argparse
@@ -38,17 +34,16 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import A2C, PPO, DQN
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+
+# These imports are useful when loading saved custom DQN policies.
+import dueling_dqn  # noqa: F401
+import double_dueling_dqn  # noqa: F401
 
 from agent_adapters import SB3AgentAdapter, RecurrentPPOAdapter, BaselineAdapter
 from baseline_agent import RuleBasedBaseline
 from env_factory import make_env
-
-from vanilla_dqn import VanillaDQN
-from double_dqn import DoubleDQN
-from dueling_dqn import DuelingDQN
-from double_dueling_dqn import DoubleDuelingDQN
 from sparse_ppo import SparsePPO
 
 try:
@@ -63,51 +58,50 @@ class ModelSpec:
     model_class: object
     model_path: str
     vecnorm_path: str
-    adapter_type: str = "sb3"
 
 
 MODEL_SPECS = [
     ModelSpec(
-        name="Vanilla DQN",
-        model_class=VanillaDQN,
-        model_path="./models/best_vanilla_dqn_freq4/best_model.zip",
-        vecnorm_path="./models/vecnormalize_vanilla_dqn_freq4.pkl",
+        "Vanilla DQN",
+        DQN,
+        "./models/best_vanilla_dqn_freq4/best_model.zip",
+        "./models/vecnormalize_vanilla_dqn_freq4.pkl",
     ),
     ModelSpec(
-        name="Double DQN",
-        model_class=DoubleDQN,
-        model_path="./models/best_double_dqn_freq4/best_model.zip",
-        vecnorm_path="./models/vecnormalize_double_dqn_freq4.pkl",
+        "Double DQN",
+        DQN,
+        "./models/best_double_dqn_freq4/best_model.zip",
+        "./models/vecnormalize_double_dqn_freq4.pkl",
     ),
     ModelSpec(
-        name="Dueling DQN",
-        model_class=DuelingDQN,
-        model_path="./models/best_dueling_dqn_freq4/best_model.zip",
-        vecnorm_path="./models/vecnormalize_dueling_dqn_freq4.pkl",
+        "Dueling DQN",
+        DQN,
+        "./models/best_dueling_dqn_freq4/best_model.zip",
+        "./models/vecnormalize_dueling_dqn_freq4.pkl",
     ),
     ModelSpec(
-        name="Double-Dueling DQN",
-        model_class=DoubleDuelingDQN,
-        model_path="./models/best_double_dueling_dqn_freq4/best_model.zip",
-        vecnorm_path="./models/vecnormalize_double_dueling_dqn_freq4.pkl",
+        "Double-Dueling DQN",
+        DQN,
+        "./models/best_double_dueling_dqn_freq4/best_model.zip",
+        "./models/vecnormalize_double_dueling_dqn_freq4.pkl",
     ),
     ModelSpec(
-        name="PPO",
-        model_class=PPO,
-        model_path="./models/best_ppo/best_model.zip",
-        vecnorm_path="./models/vecnormalize_ppo.pkl",
+        "PPO",
+        PPO,
+        "./models/best_ppo/best_model.zip",
+        "./models/vecnormalize_ppo.pkl",
     ),
     ModelSpec(
-        name="Sparse PPO K=4",
-        model_class=SparsePPO,
-        model_path="./models/sparse_ppo_k4.zip",
-        vecnorm_path="./models/vecnormalize_sparse_ppo_k4.pkl",
+        "Sparse PPO K=4",
+        SparsePPO,
+        "./models/sparse_ppo_k4.zip",
+        "./models/vecnormalize_sparse_ppo_k4.pkl",
     ),
     ModelSpec(
-        name="A2C",
-        model_class=A2C,
-        model_path="./models/best_a2c/best_model.zip",
-        vecnorm_path="./models/vecnormalize_a2c.pkl",
+        "A2C",
+        A2C,
+        "./models/best_a2c/best_model.zip",
+        "./models/vecnormalize_a2c.pkl",
     ),
 ]
 
@@ -117,8 +111,6 @@ def parse_seeds(seed_text):
 
 
 def make_eval_env(seed, vecnorm_path):
-    """Create one evaluation environment with fixed traffic seed."""
-
     env = DummyVecEnv([make_env(rank=0, seed=seed)])
 
     if vecnorm_path and os.path.exists(vecnorm_path):
@@ -130,8 +122,6 @@ def make_eval_env(seed, vecnorm_path):
 
 
 def load_adapter(spec):
-    """Load a trained model and wrap it with the correct adapter."""
-
     if not os.path.exists(spec.model_path):
         print(f"[SKIP] {spec.name}: missing model {spec.model_path}")
         return None
@@ -145,8 +135,6 @@ def load_adapter(spec):
 
 
 def load_recurrent_ppo_adapter():
-    """Load PPO-LSTM separately because it needs the recurrent adapter."""
-
     if RecurrentPPO is None:
         print("[SKIP] PPO-LSTM: sb3-contrib is not installed.")
         return None, None
@@ -196,10 +184,10 @@ def run_episode(adapter, env, max_queue=500):
         total_cost += float(info["active"])
         total_dropped += float(info["dropped"])
         total_queue += float(info["queue"])
-
         steps += 1
 
     mean_queue = total_queue / max(1, steps)
+    switch_rate = action_switches / max(1, steps - 1)
 
     return {
         "return": total_return,
@@ -207,7 +195,7 @@ def run_episode(adapter, env, max_queue=500):
         "mean_queue": mean_queue,
         "cost": total_cost,
         "dropped_requests": total_dropped,
-        "action_stability": 1.0 - (action_switches / max(1, steps - 1)),
+        "action_stability": 1.0 - switch_rate,
         "action_switches": action_switches,
         "steps": steps,
     }
@@ -258,7 +246,7 @@ def plot_metric(summary_rows, metric, out_dir):
     means = [row[f"{metric}_mean"] for row in summary_rows]
     stds = [row[f"{metric}_std"] for row in summary_rows]
 
-    plt.figure(figsize=(11, 5))
+    plt.figure(figsize=(12, 5))
     plt.bar(names, means, yerr=stds, capsize=4)
     plt.xticks(rotation=30, ha="right")
     plt.ylabel(metric.replace("_", " "))
@@ -342,25 +330,13 @@ def main():
         summary = summarize(rows_for_agent)
         summary["algorithm"] = adapter.name
         summary["num_seeds"] = len(seeds)
-
         summary_rows.append(summary)
 
     os.makedirs(args.out_dir, exist_ok=True)
 
-    write_csv(
-        os.path.join(args.out_dir, "episode_results.csv"),
-        all_episode_rows,
-    )
-
-    write_csv(
-        os.path.join(args.out_dir, "summary_results.csv"),
-        summary_rows,
-    )
-
-    write_json(
-        os.path.join(args.out_dir, "summary_results.json"),
-        summary_rows,
-    )
+    write_csv(os.path.join(args.out_dir, "episode_results.csv"), all_episode_rows)
+    write_csv(os.path.join(args.out_dir, "summary_results.csv"), summary_rows)
+    write_json(os.path.join(args.out_dir, "summary_results.json"), summary_rows)
 
     for metric in [
         "return",
