@@ -1,7 +1,7 @@
 """
 DQN Hyperparameter Optimization for All Variants
 ================================================
-Optimizes Vanilla, Double, Dueling, and Double-Dueling DQN variants
+Optimizes Vanilla, Double DQN variants
 using Optuna with early pruning and variant-specific search spaces.
 """
 
@@ -19,8 +19,6 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 from vanilla_dqn import VanillaDQN
 from double_dqn import DoubleDQN
-from dueling_dqn import DuelingDQN
-from double_dueling_dqn import DoubleDuelingDQN
 from env_factory import make_env, make_vec_env
 
 warnings.filterwarnings("ignore")
@@ -32,15 +30,11 @@ warnings.filterwarnings("ignore")
 VARIANT_MAP = {
     "vanilla": VanillaDQN,
     "double": DoubleDQN,
-    "dueling": DuelingDQN,
-    "double_dueling": DoubleDuelingDQN,
 }
 
 VARIANT_NAMES = {
     "vanilla": "Vanilla DQN",
     "double": "Double DQN",
-    "dueling": "Dueling DQN",
-    "double_dueling": "Double + Dueling DQN",
 }
 
 # Base hyperparameters that are shared across all variants
@@ -84,39 +78,7 @@ VARIANT_SEARCH_SPACES = {
             [128, 256, 128],
             [256, 128, 256]
         ],
-    },
-    "dueling": {
-        "learning_rate": (1e-5, 1e-3),
-        "target_update_interval": [500, 1000, 2000, 5000],
-        "batch_size": [32, 64, 128, 256],
-        "exploration_fraction": (0.05, 0.5),
-        "exploration_initial_eps": (0.5, 1.0),
-        "exploration_final_eps": (0.01, 0.1),
-        "net_arch": [
-            [128, 128],
-            [256, 256],
-            [512, 512],
-            [128, 256, 128],
-            [256, 128, 256],
-            [256, 512, 256],  # Dueling benefits from deeper networks
-        ],
-    },
-    "double_dueling": {
-        "learning_rate": (1e-5, 1e-2),
-        "target_update_interval": [500, 1000, 2000, 5000],
-        "batch_size": [32, 64, 128, 256],
-        "exploration_fraction": (0.05, 0.5),
-        "exploration_initial_eps": (0.5, 1.0),
-        "exploration_final_eps": (0.01, 0.1),
-        "net_arch": [
-            [128, 128],
-            [256, 256],
-            [512, 512],
-            [128, 256, 128],
-            [256, 128, 256],
-            [256, 512, 256],
-        ],
-    },
+    }
 }
 
 
@@ -131,7 +93,7 @@ def create_objective(variant: str, eval_freq: int = 50_000, total_steps: int = 5
     Parameters
     ----------
     variant : str
-        One of: vanilla, double, dueling, double_dueling
+        One of: vanilla, double dqn
     eval_freq : int
         How often to evaluate during training (for pruning)
     total_steps : int
@@ -534,10 +496,6 @@ class DQNOptimizer:
 
         return model, mean_reward
 
-
-# --------------------------------------------------
-# Main Execution
-# --------------------------------------------------
 
 if __name__ == "__main__":
     # Initialize optimizer
