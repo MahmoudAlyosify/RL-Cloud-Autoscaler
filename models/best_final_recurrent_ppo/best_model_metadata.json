@@ -1,0 +1,20 @@
+{
+  "selected_variant": "PPO-LSTM Stable",
+  "family": "PPO-LSTM",
+  "selection_rule": "best_overall_score_within_same_family",
+  "original_model_path": "./models/best_recurrent_ppo_stable/best_model.zip",
+  "original_vecnorm_path": "./models/vecnormalize_recurrent_ppo_stable.pkl",
+  "saved_model_path": "./models/best_final_recurrent_ppo/best_model.zip",
+  "saved_vecnorm_path": "./models/best_final_recurrent_ppo/vecnormalize.pkl",
+  "return_mean": -2636.07551715374,
+  "return_std": 114.61581661942645,
+  "cost_mean": 2624.0,
+  "cost_std": 105.48933595392475,
+  "dropped_requests_mean": 0.2,
+  "dropped_requests_std": 0.447213595499958,
+  "latency_proxy_mean": 0.0477856,
+  "latency_proxy_std": 0.004727736329365251,
+  "action_stability_mean": 0.832032032032032,
+  "action_stability_std": 0.011788885301651468,
+  "overall_score": 0.9209408132276107
+}
