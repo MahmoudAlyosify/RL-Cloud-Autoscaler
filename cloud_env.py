@@ -18,7 +18,7 @@ class CloudScalingEnv(gym.Env):
                  max_queue=500, boot_delay=3, episode_length=1000,
                  traffic_mode="stochastic",
                  reward_weights=(1.0, 0.1, 20.0, 5.0),
-                 lambda_max=240.0, seed=None):
+                 lambda_max=240.0, seed=None, traffic_kwargs=None):
         super().__init__()
 
         self.N_max = max_servers
@@ -30,6 +30,7 @@ class CloudScalingEnv(gym.Env):
         self.traffic_mode = traffic_mode
         self.alpha, self.beta, self.gamma_w, self.delta = reward_weights
         self.lambda_max = lambda_max
+        self.traffic_kwargs = dict(traffic_kwargs or {})
 
         self.observation_space = spaces.Box(
             low=0.0, high=1.0, shape=(5,), dtype=np.float32)
@@ -60,8 +61,11 @@ class CloudScalingEnv(gym.Env):
         self.last_action = 1  # HOLD -- so first thrash check is clean
 
         self.traffic = PoissonTrafficGenerator(
-            seed=int(self._rng.integers(1e9)),
-            mode=self.traffic_mode)
+                    seed=int(self._rng.integers(1e9)),
+                    mode=self.traffic_mode,
+                    **self.traffic_kwargs,)
+
+
         self.arrival_ema = self.traffic.peek_lambda(0)
 
         obs = self._get_obs(cpu_util=0.0)
