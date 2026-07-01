@@ -49,6 +49,7 @@ def main():
                         help="Timesteps per K value (matches DQN variant budget)")
     parser.add_argument("--device", default="auto",
                         choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
     for k in [1, 4, 8]:
