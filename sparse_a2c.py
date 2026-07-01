@@ -25,13 +25,10 @@ class SparseA2C(A2C):
         super().train()
 
 
-#  MAIN — trains K=1, 4, 8 sequentially, EvalCallback attached for each
-
 def main():
     parser = argparse.ArgumentParser(description="Run Sparse A2C experiments")
     parser.add_argument("--timesteps", type=int, default=2_000_000)
-    parser.add_argument("--device", default="auto",
-                        choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -46,32 +43,39 @@ def main():
         for d in [best_model_dir, eval_log_dir, checkpoint_dir]:
             os.makedirs(d, exist_ok=True)
 
-        raw_train_env = DummyVecEnv(
-            [make_env(rank=i, seed=args.seed) for i in range(8)]
+        train_env = make_vec_env(
+            n_envs=8,
+            seed=args.seed,
+            use_subprocess=False,
+            norm_reward=True,
         )
-        train_env = VecNormalize.load(
-            "./models/vecnormalize_a2c_cost_aware.pkl",
-            raw_train_env,
-        )
-        train_env.training = True
-        train_env.norm_reward = True
 
-        raw_eval_env = DummyVecEnv([make_env(rank=100, seed=args.seed)])
-        eval_env = VecNormalize.load(
-            "./models/vecnormalize_a2c_cost_aware.pkl",
-            raw_eval_env,
+        eval_env = VecNormalize(
+            DummyVecEnv([make_env(rank=100, seed=args.seed)]),
+            norm_obs=True,
+            norm_reward=False,
+            clip_obs=5.0,
+            gamma=0.99,
         )
         eval_env.training = False
-        eval_env.norm_reward = False
 
-        model = SparseA2C.load(
-            "./models/best_a2c_cost_aware/best_model.zip",
+        model = SparseA2C(
+            policy="MlpPolicy",
             env=train_env,
+            learning_rate=3e-4,
+            n_steps=512,
+            gamma=0.99,
+            gae_lambda=0.95,
+            ent_coef=0.01,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            policy_kwargs=dict(net_arch=dict(pi=[256, 256], vf=[256, 256])),
             tensorboard_log=tb_log_dir,
             device=args.device,
+            seed=args.seed,
+            verbose=1,
+            update_every_k=k,
         )
-        model.update_every_k = k
-        model._rollout_idx = 0
 
         eval_cb = EvalCallback(
             eval_env,
@@ -90,6 +94,7 @@ def main():
             model.learn(
                 total_timesteps=args.timesteps,
                 callback=[eval_cb, ckpt_cb, metrics_cb],
+                reset_num_timesteps=True,
             )
         except KeyboardInterrupt:
             print(f"\n[INTERRUPTED] K={k} — saving partial model")

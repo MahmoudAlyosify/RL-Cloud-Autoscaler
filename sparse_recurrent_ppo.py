@@ -10,12 +10,6 @@ from env_factory import make_env, make_vec_env
 from metrics_callback import MetricsCallback
 
 class SparseRecurrentPPO(RecurrentPPO):
-    """RecurrentPPO that performs a gradient update only every K-th rollout.
-
-    Identical mechanism to SparsePPO in sparse_ppo.py. On skipped
-    iterations the freshly collected on-policy rollout (including
-    the LSTM hidden states accumulated during collection) is discarded.
-    """
 
     def __init__(self, *args, update_every_k=1, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,15 +25,10 @@ class SparseRecurrentPPO(RecurrentPPO):
         super().train()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Trains K=1, 4, 8 sequentially, EvalCallback attached for each
-# ─────────────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(
-        description="Run Sparse Recurrent PPO (PPO-LSTM) experiments")
+    parser = argparse.ArgumentParser(description="Run Sparse Recurrent PPO (PPO-LSTM) experiments")
     parser.add_argument("--timesteps", type=int, default=2_000_000)
-    parser.add_argument("--device", default="auto",
-                        choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -54,32 +43,48 @@ def main():
         for d in [best_model_dir, eval_log_dir, checkpoint_dir]:
             os.makedirs(d, exist_ok=True)
 
-        raw_train_env = DummyVecEnv(
-            [make_env(rank=i, seed=args.seed) for i in range(8)]
+        train_env = make_vec_env(
+            n_envs=8,
+            seed=args.seed,
+            use_subprocess=False,
+            norm_reward=True,
         )
-        train_env = VecNormalize.load(
-            "./models/vecnormalize_recurrent_ppo_stable.pkl",
-            raw_train_env,
-        )
-        train_env.training = True
-        train_env.norm_reward = True
 
-        raw_eval_env = DummyVecEnv([make_env(rank=100, seed=args.seed)])
-        eval_env = VecNormalize.load(
-            "./models/vecnormalize_recurrent_ppo_stable.pkl",
-            raw_eval_env,
+        eval_env = VecNormalize(
+            DummyVecEnv([make_env(rank=100, seed=args.seed)]),
+            norm_obs=True,
+            norm_reward=False,
+            clip_obs=5.0,
+            gamma=0.99,
         )
         eval_env.training = False
-        eval_env.norm_reward = False
 
-        model = SparseRecurrentPPO.load(
-            "./models/best_recurrent_ppo_stable/best_model.zip",
+        model = SparseRecurrentPPO(
+            policy="MlpLstmPolicy",
             env=train_env,
+            learning_rate=3e-4,
+            n_steps=1024,
+            batch_size=256,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            ent_coef=0.01,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            policy_kwargs=dict(
+                lstm_hidden_size=128,
+                n_lstm_layers=1,
+                shared_lstm=False,
+                enable_critic_lstm=True,
+                net_arch=dict(pi=[256], vf=[256]),
+            ),
             tensorboard_log=tb_log_dir,
             device=args.device,
+            seed=args.seed,
+            verbose=1,
+            update_every_k=k,
         )
-        model.update_every_k = k
-        model._rollout_idx = 0
 
         eval_cb = EvalCallback(
             eval_env,
@@ -89,7 +94,7 @@ def main():
             n_eval_episodes=5,
             deterministic=True,
         )
-        ckpt_cb    = CheckpointCallback(save_freq=100_000, save_path=checkpoint_dir)
+        ckpt_cb = CheckpointCallback(save_freq=100_000, save_path=checkpoint_dir)
         metrics_cb = MetricsCallback()
 
         t0 = time.perf_counter()
@@ -98,6 +103,7 @@ def main():
             model.learn(
                 total_timesteps=args.timesteps,
                 callback=[eval_cb, ckpt_cb, metrics_cb],
+                reset_num_timesteps=True,
             )
         except KeyboardInterrupt:
             print(f"\n[INTERRUPTED] K={k} — saving partial model")

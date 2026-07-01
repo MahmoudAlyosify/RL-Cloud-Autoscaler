@@ -12,10 +12,7 @@ from metrics_callback import MetricsCallback
 from env_factory import make_vec_env, make_env
 
 class SparsePPO(PPO):
-    """PPO that performs a gradient update only every K-th rollout.
-    On skipped iterations the freshly collected on-policy rollout is
-    discarded (it cannot be reused next iteration because it is on-policy).
-    This trades sample usage for optimizer compute."""
+
     def __init__(self, *args, update_every_k=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_every_k = int(update_every_k)
@@ -24,11 +21,11 @@ class SparsePPO(PPO):
     def train(self) -> None:
         self._rollout_idx += 1
         if self.update_every_k > 1 and (self._rollout_idx % self.update_every_k != 0):
-            # log that we skipped, then return WITHOUT touching the optimizer
             self.logger.record("sparse/skipped_update", 1)
             return
         self.logger.record("sparse/skipped_update", 0)
-        super().train()   # the real gradient update
+        super().train()
+
 
 def sample_gpu_util(stop_evt, out):
     while not stop_evt.is_set():
@@ -45,10 +42,8 @@ def sample_gpu_util(stop_evt, out):
 
 def main():
     parser = argparse.ArgumentParser(description="Run Sparse PPO experiments")
-    parser.add_argument("--timesteps", type=int, default=2_000_000,
-                        help="Timesteps per K value (matches DQN variant budget)")
-    parser.add_argument("--device", default="auto",
-                        choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--timesteps", type=int, default=2_000_000)
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -63,32 +58,33 @@ def main():
         for d in [best_model_dir, eval_log_dir, checkpoint_dir]:
             os.makedirs(d, exist_ok=True)
 
-        raw_train_env = DummyVecEnv(
-            [make_env(rank=i, seed=args.seed) for i in range(8)]
-        )
-        train_env = VecNormalize.load(
-            "./models/vecnormalize_ppo.pkl",
-            raw_train_env,
-        )
-        train_env.training = True
-        train_env.norm_reward = True
+        train_env = make_vec_env(n_envs=8, seed=args.seed, use_subprocess=True, norm_reward=True)
 
-        raw_eval_env = DummyVecEnv([make_env(rank=100, seed=args.seed)])
-        eval_env = VecNormalize.load(
-            "./models/vecnormalize_ppo.pkl",
-            raw_eval_env,
+        eval_env = VecNormalize(
+            DummyVecEnv([make_env(rank=100, seed=args.seed)]),
+            norm_obs=True, norm_reward=False, clip_obs=5.0, gamma=0.99,
         )
         eval_env.training = False
-        eval_env.norm_reward = False
 
-        model = SparsePPO.load(
-            "./models/best_ppo/best_model.zip",
+        model = SparsePPO(
+            policy="MlpPolicy",
             env=train_env,
+            learning_rate=1.4377739650640294e-05,
+            n_steps=4096,
+            batch_size=64,
+            n_epochs=5,
+            gamma=0.9660969058740851,
+            gae_lambda=0.9175042883882351,
+            clip_range=0.1291937132179491,
+            ent_coef=0.012344366981406195,
+            vf_coef=0.9315525456344808,
+            max_grad_norm=0.48170949108431693,
+            policy_kwargs=dict(net_arch=dict(pi=[256, 256], vf=[256, 256])),
             tensorboard_log=tb_log_dir,
             device=args.device,
+            verbose=1,
+            update_every_k=k,
         )
-        model.update_every_k = k
-        model._rollout_idx = 0
 
         eval_cb = EvalCallback(
             eval_env,
@@ -108,7 +104,8 @@ def main():
         start = time.perf_counter()
         model.learn(
             total_timesteps=args.timesteps,
-            callback=[eval_cb, ckpt_cb, metrics_cb],  # ← was missing entirely
+            callback=[eval_cb, ckpt_cb, metrics_cb],
+            reset_num_timesteps=True,
         )
         wall = time.perf_counter() - start
 
