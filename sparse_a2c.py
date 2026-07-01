@@ -46,13 +46,23 @@ def main():
         for d in [best_model_dir, eval_log_dir, checkpoint_dir]:
             os.makedirs(d, exist_ok=True)
 
-        train_env = make_vec_env(n_envs=8, seed=args.seed,
-                                 use_subprocess=False, norm_reward=True)
+        raw_train_env = DummyVecEnv(
+            [make_env(rank=i, seed=args.seed) for i in range(8)]
+        )
+        train_env = VecNormalize.load(
+            "./models/vecnormalize_a2c_cost_aware.pkl",
+            raw_train_env,
+        )
+        train_env.training = True
+        train_env.norm_reward = True
 
-        eval_env = VecNormalize(
-            DummyVecEnv([make_env(rank=100, seed=args.seed)]),
-            norm_obs=True, norm_reward=False, clip_obs=5.0, gamma=0.99)
+        raw_eval_env = DummyVecEnv([make_env(rank=100, seed=args.seed)])
+        eval_env = VecNormalize.load(
+            "./models/vecnormalize_a2c_cost_aware.pkl",
+            raw_eval_env,
+        )
         eval_env.training = False
+        eval_env.norm_reward = False
 
         model = SparseA2C.load(
             "./models/best_a2c_cost_aware/best_model.zip",
