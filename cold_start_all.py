@@ -38,13 +38,13 @@ BOOT_DELAYS = [0, 1, 3, 5, 10]
 
 # agent name → (loader class, model path, vecnorm path)
 AGENT_REGISTRY = {
-    "ppo":              (PPO,          "models/best_final_recurrent_ppo/best_model.zip",              "models/best_final_recurrent_ppo/vecnormalize.pkl"),
-    "recurrent_ppo":    (RecurrentPPO, "models/best_recurrent_ppo_robust_spikes/best_model.zip",    "models/vecnormalize_recurrent_ppo_robust_spikes.pkl"),
+    "ppo":              (PPO,          "models/best_ppo/best_model.zip",              "models/vecnormalize_ppo.pkl"),
+    "recurrent_ppo":    (RecurrentPPO, "models/best_final_recurrent_ppo/best_model.zip",    "models/best_final_recurrent_ppo/vecnormalize.pkl"),
     "a2c":              (A2C,          "models/best_final_a2c/best_model.zip",              "models/best_final_a2c/vecnormalize.pkl"),
-    "dqn":              (DQN,          "./models/best_dqn/best_model.zip",              "./models/vecnormalize_dqn.pkl"),
-    "double_dqn":       (DQN,          "models/best_double_dqn_freq4/best_model.zip",   "./models/vecnormalize_double_dqn_freq4.pkl"),
-    "dueling_dqn":      (DQN,          "./models/best_dueling_dqn_freq4/best_model.zip",      "./models/vecnormalize_dueling_dqn_freq4.pkl"),
-    "dueling_double_dqn": (DQN,        "./models/best_double_dueling_dqn_freq4/best_model.zip", "./models/vecnormalize_double_dueling_dqn_freq4.pkl"),
+    "dqn":              (DQN,          "models/best_vanilla_dqn_freq8/best_model.zip",              "models/vecnormalize_vanilla_dqn_freq8.pkl"),
+    "double_dqn":       (DQN,          "models/best_double_dqn_freq1/best_model.zip",   "./models/vecnormalize_double_dqn_freq1.pkl"),
+    "dueling_dqn":      (DQN,          "models/best_dueling_dqn_freq4/best_model.zip",      "./models/vecnormalize_dueling_dqn_freq4.pkl"),
+    "dueling_double_dqn": (DQN,        "models/best_double_dueling_dqn_freq8/best_model.zip", "./models/vecnormalize_double_dueling_dqn_freq8.pkl"),
 }
 
 
@@ -127,9 +127,9 @@ def main():
         if os.path.exists(model_path):
             agents[name] = cls.load(model_path)
             vecnorm_map[name] = vecnorm_path
-            print(f"[✓] Loaded {name}")
+            print(f"Loaded {name}")
         else:
-            print(f"[!] {name} not found at {model_path} — skipping")
+            print(f"{name} not found at {model_path} — skipping")
 
     #run sweep 
     results = {}

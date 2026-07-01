@@ -81,66 +81,95 @@ PPO_KWARGS = dict(
 
 # RecurrentPPO uses same on-policy kwargs; net_arch format differs slightly
 RECURRENT_PPO_KWARGS = dict(
-    learning_rate = 1.4377739650640294e-05,
-    n_steps       = 4096,
-    batch_size    = 64,
-    n_epochs      = 5,
-    gamma         = 0.9660969058740851,
-    gae_lambda    = 0.9175042883882351,
-    clip_range    = 0.1291937132179491,
-    ent_coef      = 0.012344366981406195,
-    vf_coef       = 0.9315525456344808,
-    max_grad_norm = 0.48170949108431693,
+    learning_rate=3e-4,
+    n_steps=1024,
+    batch_size=256,
+    n_epochs=10,
+    gamma=0.99,
+    gae_lambda=0.95,
+    clip_range=0.2,
+    ent_coef=0.01,
+    vf_coef=0.5,
+    max_grad_norm=0.5,
 )
 
 A2C_KWARGS = dict(
-    learning_rate = 1.4377739650640294e-05,
-    n_steps       = 5,
-    gamma         = 0.9660969058740851,
-    gae_lambda    = 0.9175042883882351,
-    ent_coef      = 0.012344366981406195,
-    vf_coef       = 0.9315525456344808,
-    max_grad_norm = 0.48170949108431693,
+    learning_rate=3e-4,
+        n_steps=512,
+        gamma=0.99,
+        gae_lambda=0.95,
+        ent_coef=0.01,
+        vf_coef=0.5,
+        max_grad_norm=0.5,
     policy_kwargs = dict(net_arch=dict(pi=[256, 256], vf=[256, 256])),
 )
 
 DQN_KWARGS = dict(
-    learning_rate          = 1e-4,
-    buffer_size            = 100_000,
-    learning_starts        = 10_000,
-    batch_size             = 64,
-    tau                    = 1.0,
-    gamma                  = 0.99,
-    train_freq             = 4,
-    gradient_steps         = 1,
-    target_update_interval = 1_000,
-    exploration_fraction   = 0.1,
-    exploration_final_eps  = 0.05,
-    policy_kwargs          = dict(net_arch=[256, 256]),
+    learning_rate=8.42665034538258e-05,
+    buffer_size=500_000,
+    learning_starts=5_000,
+    batch_size=128,
+    tau=1.0,
+    gamma=0.9907466921420781,
+    train_freq=8,
+    gradient_steps=16,
+    target_update_interval=1000,
+    exploration_fraction=0.21573775929604358,
+    exploration_initial_eps=0.9485296583267736,
+    exploration_final_eps=0.025018757601193223,
+    policy_kwargs=dict(net_arch=[128, 256, 128]),
 )
 
-DOUBLE_DQN_KWARGS = {
-    **DQN_KWARGS,
-    "policy_kwargs": dict(net_arch=[256, 256]),
+DOUBLE_DQN_KWARGS = dict(
+    learning_rate=0.00010927879883233762,
+        buffer_size=1_000_000,
+        learning_starts=1_000,
+        batch_size=256,
+        tau=1.0,
+        gamma=0.9654786631566694,
+        train_freq=8,
+        gradient_steps=1,
+        target_update_interval=1000,
+        exploration_fraction=0.12507445265541792,
+        exploration_initial_eps=0.9292317317572214,
+        exploration_final_eps=0.08358632912993018,
+        policy_kwargs=dict(net_arch=[512, 512])
     # Double DQN is always-on in SB3's DQN via the target network —
     # no extra flag needed; this config is identical to DQN_KWARGS,
     # kept separate so it can diverge later if you tune it independently.
-}
+)
 
-DUELING_DQN_KWARGS = {
-    **DQN_KWARGS,
-    "policy_kwargs": dict(net_arch=[256, 256]),
-    # NOTE: dueling architecture is supplied via DuelingDQNPolicy
-    # (see dueling_dqn_policy.py), not via a policy_kwargs flag —
-    # SB3's DQNPolicy has no native `dueling` argument.
-}
+DUELING_DQN_KWARGS = dict(
+        learning_rate=0.0007746859494512188,
+        buffer_size=1_000_000,
+        learning_starts=5_000,
+        batch_size=64,
+        tau=1.0,
+        gamma=0.9502843111169749,
+        train_freq=4,
+        gradient_steps=1,
+        target_update_interval=500,
+        exploration_fraction=0.4595670006588379,
+        exploration_initial_eps=0.8167358365079543,
+        exploration_final_eps=0.0995978490043962,
+        policy_kwargs=dict(net_arch=[256, 512, 256]),
+    )
 
-DUELING_DOUBLE_DQN_KWARGS = {
-    **DQN_KWARGS,
-    "policy_kwargs": dict(net_arch=[256, 256]),
-    # Same dueling note as above; Double DQN behavior again comes for
-    # free from SB3's target network.
-}
+DUELING_DOUBLE_DQN_KWARGS = dict(
+        learning_rate=0.00048287152161792117,
+        buffer_size=100_000,
+        learning_starts=1_000,
+        batch_size=256,
+        tau=1.0,
+        gamma=0.9578998430754462,
+        train_freq=1,
+        gradient_steps=1,
+        target_update_interval=500,
+        exploration_fraction=0.191460191484347,
+        exploration_initial_eps=0.7542853455823514,
+        exploration_final_eps=0.09168098265334837,
+        policy_kwargs=dict(net_arch=[512, 512]),
+    )
 
 # ── plot styles ────────────────────────────────────────────────────────────────
 AGENT_STYLE = {
@@ -396,7 +425,7 @@ def main():
     ap.add_argument("--seed",      type=int, default=42)
     ap.add_argument("--device",    default="cpu", choices=["auto", "cpu", "cuda"])
     ap.add_argument("--eval_only", action="store_true")
-    ap.add_argument("--out_dir",   default="plots")
+    ap.add_argument("--out_dir",   default="results/Experments/plots_ex5")
     args = ap.parse_args()
 
     os.makedirs("results", exist_ok=True)
@@ -450,7 +479,7 @@ def main():
                   f"cost={m['cost']['mean']:>8.1f}")
 
     # ── save & plot ────────────────────────────────────────────────────────────
-    out_json = "results/exp5_gamma_sweep.json"
+    out_json = "results/Experments/exp5_gamma_sweep.json"
     with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\n[✓] Results saved → {out_json}")
