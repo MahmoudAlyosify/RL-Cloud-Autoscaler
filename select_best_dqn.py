@@ -62,8 +62,7 @@ def load_variant_model(AgentClass, custom_policy, freq: int):
     if custom_policy is None:
         model = DQN.load(model_path)
     else:
-        model = DQN.load(model_path,
-                         custom_objects={"policy_class": custom_policy})
+        model = DQN.load(model_path, custom_objects={"policy_class": custom_policy})
 
     return model, vecnorm
 
@@ -91,7 +90,7 @@ def main():
         if model is None:
             continue
 
-        metrics       = evaluate_agent(model, vecnorm, args.episodes, args.seed)
+        metrics = evaluate_agent(model, vecnorm, args.episodes, args.seed)
         overall_score = compute_overall_score(metrics)
 
         paths = AgentClass.get_paths(args.freq)
@@ -129,7 +128,7 @@ def main():
     print("=" * 60)
 
     # copy winning model + vecnorm into best_final_dqn/
-    out_dir = "./models/best_final_dqn/"
+    out_dir = f"./models/best_final_dqn_freq{args.freq}/"
     os.makedirs(out_dir, exist_ok=True)
 
     saved_model_path   = os.path.join(out_dir, "best_model.zip")
