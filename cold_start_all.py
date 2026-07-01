@@ -38,9 +38,9 @@ BOOT_DELAYS = [0, 1, 3, 5, 10]
 
 # agent name → (loader class, model path, vecnorm path)
 AGENT_REGISTRY = {
-    "ppo":              (PPO,          "./models/best_ppo/best_model.zip",              "./models/vecnormalize_ppo.pkl"),
-    "recurrent_ppo":    (RecurrentPPO, "./models/best_recurrent_ppo/best_model.zip",    "./models/vecnormalize_recurrent_ppo.pkl"),
-    "a2c":              (A2C,          "./models/best_a2c/best_model.zip",              "./models/vecnormalize_a2c.pkl"),
+    "ppo":              (PPO,          "models/best_final_recurrent_ppo/best_model.zip",              "models/best_final_recurrent_ppo/vecnormalize.pkl"),
+    "recurrent_ppo":    (RecurrentPPO, "models/best_recurrent_ppo_robust_spikes/best_model.zip",    "models/vecnormalize_recurrent_ppo_robust_spikes.pkl"),
+    "a2c":              (A2C,          "models/best_final_a2c/best_model.zip",              "models/best_final_a2c/vecnormalize.pkl"),
     "dqn":              (DQN,          "./models/best_dqn/best_model.zip",              "./models/vecnormalize_dqn.pkl"),
     "double_dqn":       (DQN,          "models/best_double_dqn_freq4/best_model.zip",   "./models/vecnormalize_double_dqn_freq4.pkl"),
     "dueling_dqn":      (DQN,          "./models/best_dueling_dqn_freq4/best_model.zip",      "./models/vecnormalize_dueling_dqn_freq4.pkl"),

@@ -1,4 +1,3 @@
-/mnt/user-data/outputs/exp5_gamma_train_sweep.py << 'PYEOF'
 """
 Experiment 5 — Reward-Shaping Sensitivity (Train-time γ sweep)
 ==============================================================
@@ -49,12 +48,13 @@ import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 from sb3_contrib import RecurrentPPO
+from sb3_contrib.ppo_recurrent import MlpLstmPolicy
 from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-
 from baseline_agent import RuleBasedBaseline
 from cloud_env import CloudScalingEnv  # noqa: F401
+from dueling_dqn_policy import DuelingDQNPolicy
 from env_factory import make_env, make_vec_env
 
 if "CloudScaling-v1" not in gym.envs.registry:
@@ -122,18 +122,24 @@ DQN_KWARGS = dict(
 DOUBLE_DQN_KWARGS = {
     **DQN_KWARGS,
     "policy_kwargs": dict(net_arch=[256, 256]),
-    # Double DQN is enabled via optimize_memory_usage=False (SB3 default)
-    # and the target network — no extra flag needed in SB3
+    # Double DQN is always-on in SB3's DQN via the target network —
+    # no extra flag needed; this config is identical to DQN_KWARGS,
+    # kept separate so it can diverge later if you tune it independently.
 }
 
 DUELING_DQN_KWARGS = {
     **DQN_KWARGS,
-    "policy_kwargs": dict(net_arch=[256, 256], dueling=True),
+    "policy_kwargs": dict(net_arch=[256, 256]),
+    # NOTE: dueling architecture is supplied via DuelingDQNPolicy
+    # (see dueling_dqn_policy.py), not via a policy_kwargs flag —
+    # SB3's DQNPolicy has no native `dueling` argument.
 }
 
 DUELING_DOUBLE_DQN_KWARGS = {
     **DQN_KWARGS,
-    "policy_kwargs": dict(net_arch=[256, 256], dueling=True),
+    "policy_kwargs": dict(net_arch=[256, 256]),
+    # Same dueling note as above; Double DQN behavior again comes for
+    # free from SB3's target network.
 }
 
 # ── plot styles ────────────────────────────────────────────────────────────────
@@ -155,7 +161,7 @@ def reward_weights_for(g: float) -> tuple:
 
 
 def model_dir(g: float) -> str:
-    return f"./models/gamma_{int(g)}"
+    return f"./models/exp5/gamma_{int(g)}"
 
 
 def _make_train_env_onpolicy(g: float, seed: int, n_envs: int = 8):
@@ -183,13 +189,13 @@ def _make_eval_env(g: float, seed: int):
 
 
 def _train(cls, kwargs, tag, g, timesteps, device, train_env, eval_env,
-           best_path, vecnorm_path):
+           best_path, vecnorm_path, policy="MlpPolicy"):
     """Generic train loop shared by all algorithms."""
     print(f"\n  [{tag}] γ={g}  timesteps={timesteps:,}")
     os.makedirs(best_path, exist_ok=True)
 
-    model = cls(policy="MlpPolicy", env=train_env,
-                tensorboard_log=f"./logs/{tag}_gamma_{int(g)}/",
+    model = cls(policy=policy, env=train_env,
+                tensorboard_log=f"./logs/exp5/{tag}_gamma_{int(g)}/",
                 device=device, verbose=0, **kwargs)
 
     eval_cb = EvalCallback(
@@ -221,7 +227,7 @@ def train_recurrent_ppo(g, timesteps, device):
                   _make_train_env_onpolicy(g, seed=0),
                   _make_eval_env(g, seed=0),
                   f"{mdir}/recurrent_ppo_best",
-                  f"{mdir}/recurrent_ppo_vecnorm.pkl")
+                  f"{mdir}/recurrent_ppo_vecnorm.pkl",policy="MlpLstmPolicy")
 
 
 def train_a2c(g, timesteps, device):
@@ -254,7 +260,8 @@ def train_dueling_dqn(g, timesteps, device):
                   _make_train_env_offpolicy(g, seed=0),
                   _make_eval_env(g, seed=0),
                   f"{mdir}/dueling_dqn_best",
-                  f"{mdir}/dueling_dqn_vecnorm.pkl")
+                  f"{mdir}/dueling_dqn_vecnorm.pkl",
+                  policy=DuelingDQNPolicy)
 
 
 def train_dueling_double_dqn(g, timesteps, device):
@@ -264,7 +271,8 @@ def train_dueling_double_dqn(g, timesteps, device):
                   _make_train_env_offpolicy(g, seed=0),
                   _make_eval_env(g, seed=0),
                   f"{mdir}/dueling_double_dqn_best",
-                  f"{mdir}/dueling_double_dqn_vecnorm.pkl")
+                  f"{mdir}/dueling_double_dqn_vecnorm.pkl",
+                  policy=DuelingDQNPolicy)
 
 
 # maps agent name → (train_fn, loader_cls)
