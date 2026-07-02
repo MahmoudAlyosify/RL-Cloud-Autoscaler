@@ -38,11 +38,11 @@ BOOT_DELAYS = [0, 1, 3, 5, 10]
 
 # agent name → (loader class, model path, vecnorm path)
 AGENT_REGISTRY = {
-    "ppo":              (PPO,          "models/best_ppo/best_model.zip",              "models/vecnormalize_ppo.pkl"),
-    "recurrent_ppo":    (RecurrentPPO, "models/best_final_recurrent_ppo/best_model.zip",    "models/best_final_recurrent_ppo/vecnormalize.pkl"),
-    "a2c":              (A2C,          "models/best_final_a2c/best_model.zip",              "models/best_final_a2c/vecnormalize.pkl"),
+    "ppo":              (PPO,          "models/sparse_ppo_k1.zip",              "models/vecnormalize_sparse_ppo_k1.pkl"),
+    "recurrent_ppo":    (RecurrentPPO, "models/sparse_recurrent_ppo_k4.zip",    "models/vecnormalize_sparse_recurrent_ppo_k4.pkl"),
+    "a2c":              (A2C,          "models/sparse_a2c_k1.zip",              "models/vecnormalize_sparse_a2c_k1.pkl"),
     "dqn":              (DQN,          "models/best_vanilla_dqn_freq8/best_model.zip",              "models/vecnormalize_vanilla_dqn_freq8.pkl"),
-    "double_dqn":       (DQN,          "models/best_double_dqn_freq1/best_model.zip",   "./models/vecnormalize_double_dqn_freq1.pkl"),
+    "double_dqn":       (DQN,          "models/best_double_dqn_freq8/best_model.zip",   "./models/vecnormalize_double_dqn_freq8.pkl"),
     "dueling_dqn":      (DQN,          "models/best_dueling_dqn_freq4/best_model.zip",      "./models/vecnormalize_dueling_dqn_freq4.pkl"),
     "dueling_double_dqn": (DQN,        "models/best_double_dueling_dqn_freq8/best_model.zip", "./models/vecnormalize_double_dueling_dqn_freq8.pkl"),
 }
