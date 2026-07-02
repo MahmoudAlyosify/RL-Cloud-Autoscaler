@@ -1,27 +1,28 @@
-"""Main algorithm comparison using a common adapter-based evaluator.
+"""Main algorithm comparison for the cloud autoscaling experiments.
 
-This script evaluates the final/tuned models on the same environment,
-traffic seeds, state space, reward function, and action limits.
+This script evaluates the selected final models under the same environment,
+traffic generator, reward function, action space, and random seeds. It is used
+to produce the main algorithm comparison table and plots in the report.
 
 Models included:
 - PPO
 - A2C Final
 - PPO-LSTM Final
-- Vanilla DQN, update_frequency=1
-- Double DQN, update_frequency=1
-- Dueling DQN, update_frequency=1
-- Double+Dueling DQN, update_frequency=1
+- Vanilla DQN with update_frequency=1
+- Double DQN with update_frequency=1
+- Dueling DQN with update_frequency=1
+- Double+Dueling DQN with update_frequency=1
+- Rule-Based Baseline
 
-Metrics:
-- return
+We only loads already trained models and evaluates them fairly using the same evaluation seeds.
+
+Metrics reported:
+- cumulative return
 - latency proxy
-- mean queue
+- mean queue length
 - cost
 - dropped requests
 - action stability
-
-Latency note: the environment does not track per-request waiting time, so
-latency is approximated with normalized mean queue occupancy.
 """
 
 import argparse
@@ -35,9 +36,8 @@ import numpy as np
 from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-from agent_adapters import RecurrentPPOAdapter, SB3AgentAdapter
-from double_dueling_dqn import DoubleDuelingDQNPolicy
-from dueling_dqn import DuelingDQNPolicy
+from agent_adapters import BaselineAdapter, RecurrentPPOAdapter, SB3AgentAdapter
+from baseline_agent import RuleBasedBaseline
 from env_factory import make_env
 
 try:
@@ -45,13 +45,31 @@ try:
 except ImportError:
     RecurrentPPO = None
 
+try:
+    from custom_dqn_policies import DuelingDQNPolicy, DoubleDuelingDQNPolicy
+except ImportError:
+    from dueling_dqn import DuelingDQNPolicy
+    from double_dueling_dqn import DoubleDuelingDQNPolicy
+
 
 @dataclass
 class ModelSpec:
+    """Configuration for one evaluated policy.
+
+    model_type controls how the policy is loaded:
+    - "sb3" for standard Stable-Baselines3 models such as PPO and A2C
+    - "dqn" for DQN variants, including custom dueling policies
+    - "recurrent" for PPO-LSTM / RecurrentPPO
+    - "baseline" for the threshold-based rule baseline
+
+    The baseline does not need model_path or vecnorm_path because it is not a
+    trained neural policy.
+    """
+
     name: str
     model_type: str
-    model_path: str
-    vecnorm_path: str
+    model_path: str = None
+    vecnorm_path: str = None
     model_class: object = None
     custom_policy: object = None
 
@@ -60,16 +78,16 @@ MODEL_SPECS = [
     ModelSpec(
         name="PPO",
         model_type="sb3",
-        model_class=PPO,
         model_path="./models/best_ppo/best_model.zip",
         vecnorm_path="./models/vecnormalize_ppo.pkl",
+        model_class=PPO,
     ),
     ModelSpec(
         name="A2C Final",
         model_type="sb3",
-        model_class=A2C,
         model_path="./models/best_final_a2c/best_model.zip",
         vecnorm_path="./models/best_final_a2c/vecnormalize.pkl",
+        model_class=A2C,
     ),
     ModelSpec(
         name="PPO-LSTM Final",
@@ -103,17 +121,33 @@ MODEL_SPECS = [
         vecnorm_path="./models/vecnormalize_double_dueling_dqn_freq1.pkl",
         custom_policy=DoubleDuelingDQNPolicy,
     ),
+    ModelSpec(
+        name="Rule-Based Baseline",
+        model_type="baseline",
+    ),
 ]
 
 
 def parse_seeds(seed_text):
+    """Convert a comma-separated seed string into a list of integers."""
+
     return [int(seed.strip()) for seed in seed_text.split(",") if seed.strip()]
 
 
-def make_eval_env(seed, vecnorm_path):
+def make_eval_env(seed, vecnorm_path=None):
+    """Create one normalized evaluation environment.
+
+    Each model is evaluated using the same environment definition and seed. If
+    the model was trained with VecNormalize, the saved normalization statistics
+    are loaded and frozen for evaluation.
+
+    The rule-based baseline does not use VecNormalize, so vecnorm_path can be
+    None.
+    """
+
     env = DummyVecEnv([make_env(rank=0, seed=seed)])
 
-    if vecnorm_path and os.path.exists(vecnorm_path):
+    if vecnorm_path is not None:
         env = VecNormalize.load(vecnorm_path, env)
         env.training = False
         env.norm_reward = False
@@ -122,6 +156,13 @@ def make_eval_env(seed, vecnorm_path):
 
 
 def load_dqn_model(spec):
+    """Load a DQN model.
+
+    Standard Vanilla DQN and Double DQN can be loaded directly. Dueling DQN and
+    Double+Dueling DQN need their custom policy classes so Stable-Baselines3 can
+    reconstruct the saved model correctly.
+    """
+
     if spec.custom_policy is None:
         return DQN.load(spec.model_path)
 
@@ -132,6 +173,18 @@ def load_dqn_model(spec):
 
 
 def load_adapter(spec):
+    """Load one model and wrap it with a common adapter interface.
+
+    Different algorithms expose slightly different prediction APIs. The adapter
+    layer hides those differences so the evaluation loop can call predict() in
+    the same way for PPO, A2C, PPO-LSTM, DQN variants, and the rule-based
+    baseline.
+    """
+
+    if spec.model_type == "baseline":
+        baseline = RuleBasedBaseline()
+        return BaselineAdapter(spec.name, baseline), None
+
     if not os.path.exists(spec.model_path):
         print(f"[SKIP] {spec.name}: missing model {spec.model_path}")
         return None, None
@@ -157,6 +210,16 @@ def load_adapter(spec):
 
 
 def run_episode(adapter, env, max_queue=500):
+    """Run one evaluation episode and collect autoscaling metrics.
+
+    The returned metrics are the values used in the final comparison table:
+    return, latency proxy, cost, dropped requests, and action stability.
+
+    The environment does not directly report request-level latency, so the
+    latency proxy is computed from the average queue length normalized by the
+    maximum queue size.
+    """
+
     obs = env.reset()
     done = np.array([False])
 
@@ -173,8 +236,8 @@ def run_episode(adapter, env, max_queue=500):
 
     while not done[0]:
         action = adapter.predict(obs, done)
-
         current_action = int(np.asarray(action).flatten()[0])
+
         if previous_action is not None and current_action != previous_action:
             action_switches += 1
         previous_action = current_action
@@ -182,10 +245,14 @@ def run_episode(adapter, env, max_queue=500):
         obs, reward, done, infos = env.step(action)
         info = infos[0]
 
+        active_servers = info.get("active", info.get("active_servers", 0.0))
+        dropped = info.get("dropped", info.get("dropped_requests", 0.0))
+        queue = info.get("queue", info.get("queue_length", 0.0))
+
         total_return += float(reward[0])
-        total_cost += float(info["active"])
-        total_dropped += float(info["dropped"])
-        total_queue += float(info["queue"])
+        total_cost += float(active_servers)
+        total_dropped += float(dropped)
+        total_queue += float(queue)
         steps += 1
 
     mean_queue = total_queue / max(1, steps)
@@ -204,6 +271,8 @@ def run_episode(adapter, env, max_queue=500):
 
 
 def summarize(rows):
+    """Compute mean and standard deviation over the evaluation seeds."""
+
     metrics = [
         "return",
         "latency_proxy",
@@ -226,18 +295,22 @@ def summarize(rows):
 
 
 def write_csv(path, rows):
+    """Save result rows to a CSV file."""
+
     if not rows:
         return
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=sorted(rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
 
 
 def write_json(path, data):
+    """Save summary data as a JSON file for easier inspection."""
+
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     with open(path, "w", encoding="utf-8") as f:
@@ -245,11 +318,18 @@ def write_json(path, data):
 
 
 def plot_metric(summary_rows, metric, out_dir):
+    """Create a bar plot with error bars for one metric.
+
+    The bars show the mean over seeds, and the error bars show the standard
+    deviation. These plots are useful for seeing both performance and
+    consistency.
+    """
+
     names = [row["algorithm"] for row in summary_rows]
     means = [row[f"{metric}_mean"] for row in summary_rows]
     stds = [row[f"{metric}_std"] for row in summary_rows]
 
-    plt.figure(figsize=(13, 5))
+    plt.figure(figsize=(14, 5))
     plt.bar(names, means, yerr=stds, capsize=4)
     plt.xticks(rotation=30, ha="right")
     plt.ylabel(metric.replace("_", " "))
@@ -257,37 +337,46 @@ def plot_metric(summary_rows, metric, out_dir):
     plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
 
-    path = os.path.join(out_dir, f"{metric}.png")
-    plt.savefig(path, dpi=200)
+    plt.savefig(os.path.join(out_dir, f"{metric}.png"), dpi=200)
     plt.close()
 
 
 def plot_metric_by_seed(episode_rows, metric, out_dir):
+    """Plot each algorithm's metric value across the individual seeds.
+
+    This helps identify whether an algorithm is consistently strong or only
+    performs well on some traffic seeds.
+    """
+
     algorithms = sorted({row["algorithm"] for row in episode_rows})
 
-    plt.figure(figsize=(11, 5))
+    plt.figure(figsize=(12, 5))
+
     for algorithm in algorithms:
         rows = sorted(
             [row for row in episode_rows if row["algorithm"] == algorithm],
             key=lambda row: row["seed"],
         )
+
         seeds = [row["seed"] for row in rows]
         values = [row[metric] for row in rows]
+
         plt.plot(seeds, values, marker="o", linewidth=2, label=algorithm)
 
-    plt.xlabel("Evaluation traffic seed")
+    plt.xlabel("Evaluation seed")
     plt.ylabel(metric.replace("_", " "))
     plt.title(f"Per-seed comparison: {metric.replace('_', ' ')}")
     plt.grid(alpha=0.3)
-    plt.legend(fontsize=8)
+    plt.legend(fontsize=8, ncol=2)
     plt.tight_layout()
 
-    path = os.path.join(out_dir, f"{metric}_by_seed.png")
-    plt.savefig(path, dpi=200)
+    plt.savefig(os.path.join(out_dir, f"{metric}_by_seed.png"), dpi=200)
     plt.close()
 
 
 def plot_combined_metrics(summary_rows, out_dir):
+    """Create one summary figure containing all main comparison metrics."""
+
     metrics = [
         "return",
         "latency_proxy",
@@ -297,12 +386,14 @@ def plot_combined_metrics(summary_rows, out_dir):
     ]
 
     names = [row["algorithm"] for row in summary_rows]
+
     fig, axes = plt.subplots(2, 3, figsize=(18, 9))
     axes = axes.flatten()
 
     for ax, metric in zip(axes, metrics):
         means = [row[f"{metric}_mean"] for row in summary_rows]
         stds = [row[f"{metric}_std"] for row in summary_rows]
+
         ax.bar(names, means, yerr=stds, capsize=4)
         ax.set_title(metric.replace("_", " "))
         ax.tick_params(axis="x", rotation=30)
@@ -312,12 +403,13 @@ def plot_combined_metrics(summary_rows, out_dir):
     fig.suptitle("Main Algorithm Comparison Summary", fontsize=14)
     fig.tight_layout()
 
-    path = os.path.join(out_dir, "all_metrics_summary.png")
-    fig.savefig(path, dpi=200)
+    fig.savefig(os.path.join(out_dir, "all_metrics_summary.png"), dpi=200)
     plt.close(fig)
 
 
 def print_summary(summary_rows):
+    """Print the same summary values that are saved to summary_results.csv."""
+
     print("\n=== Main Algorithm Comparison ===")
 
     for row in summary_rows:
@@ -325,7 +417,8 @@ def print_summary(summary_rows):
         print(f"  Return:           {row['return_mean']:.2f} +/- {row['return_std']:.2f}")
         print(
             "  Latency proxy:    "
-            f"{row['latency_proxy_mean']:.4f} +/- {row['latency_proxy_std']:.4f}"
+            f"{row['latency_proxy_mean']:.4f} +/- "
+            f"{row['latency_proxy_std']:.4f}"
         )
         print(f"  Cost:             {row['cost_mean']:.2f} +/- {row['cost_std']:.2f}")
         print(
@@ -341,6 +434,13 @@ def print_summary(summary_rows):
 
 
 def main():
+    """Run the full main algorithm comparison experiment.
+
+    The script loads all available models, evaluates each one over the selected
+    seeds, writes CSV/JSON result files, and saves the plots in the output
+    folder.
+    """
+
     parser = argparse.ArgumentParser(
         description="Evaluate final/tuned algorithms on the same traffic seeds."
     )
@@ -349,7 +449,7 @@ def main():
         "--seeds",
         type=str,
         default="0,1,2,3,4",
-        help="Comma-separated evaluation traffic seeds.",
+        help="Comma-separated evaluation seeds.",
     )
 
     parser.add_argument(
@@ -362,10 +462,8 @@ def main():
     args = parser.parse_args()
     seeds = parse_seeds(args.seeds)
 
-    all_episode_rows = []
-    summary_rows = []
-
     adapters_with_vecnorm = []
+
     for spec in MODEL_SPECS:
         adapter, vecnorm_path = load_adapter(spec)
         if adapter is not None:
@@ -374,10 +472,14 @@ def main():
     if not adapters_with_vecnorm:
         raise RuntimeError("No models were loaded. Check model and VecNormalize paths.")
 
+    all_episode_rows = []
+    summary_rows = []
+
     for adapter, vecnorm_path in adapters_with_vecnorm:
         print(f"\nEvaluating {adapter.name}...")
 
         rows_for_agent = []
+
         for seed in seeds:
             env = make_eval_env(seed=seed, vecnorm_path=vecnorm_path)
             metrics = run_episode(adapter, env)
@@ -393,9 +495,11 @@ def main():
             rows_for_agent.append(row)
 
         summary = summarize(rows_for_agent)
-        summary["algorithm"] = adapter.name
-        summary["num_seeds"] = len(seeds)
-        summary_rows.append(summary)
+        summary_rows.append({
+            "algorithm": adapter.name,
+            "num_seeds": len(seeds),
+            **summary,
+        })
 
     os.makedirs(args.out_dir, exist_ok=True)
 
