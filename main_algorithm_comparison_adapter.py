@@ -1,24 +1,27 @@
+"""Main algorithm comparison using a common adapter-based evaluator.
 
-"""
-Main algorithm comparison using the Adapter Design Pattern.
+This script evaluates the final/tuned models on the same environment,
+traffic seeds, state space, reward function, and action limits.
 
-We here evaluates all trained agents on the same environment settings and
-the same traffic seeds.
-
-Algorithms included:
+Models included:
 - PPO
-- Final A2C
-- Final PPO-LSTM
+- A2C Final
+- PPO-LSTM Final
+- Vanilla DQN, update_frequency=1
+- Double DQN, update_frequency=1
+- Dueling DQN, update_frequency=1
+- Double+Dueling DQN, update_frequency=1
 
 Metrics:
 - return
 - latency proxy
+- mean queue
 - cost
 - dropped requests
 - action stability
 
-Latency note:The environment does not track individual request waiting time, so latency is
-approximated using normalized queue occupancy.
+Latency note: the environment does not track per-request waiting time, so
+latency is approximated with normalized mean queue occupancy.
 """
 
 import argparse
@@ -29,10 +32,12 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-from agent_adapters import SB3AgentAdapter, RecurrentPPOAdapter
+from agent_adapters import RecurrentPPOAdapter, SB3AgentAdapter
+from double_dueling_dqn import DoubleDuelingDQNPolicy
+from dueling_dqn import DuelingDQNPolicy
 from env_factory import make_env
 
 try:
@@ -44,23 +49,59 @@ except ImportError:
 @dataclass
 class ModelSpec:
     name: str
-    model_class: object
+    model_type: str
     model_path: str
     vecnorm_path: str
+    model_class: object = None
+    custom_policy: object = None
 
 
 MODEL_SPECS = [
     ModelSpec(
-        "PPO",
-        PPO,
-        "./models/best_ppo/best_model.zip",
-        "./models/vecnormalize_ppo.pkl",
+        name="PPO",
+        model_type="sb3",
+        model_class=PPO,
+        model_path="./models/best_ppo/best_model.zip",
+        vecnorm_path="./models/vecnormalize_ppo.pkl",
     ),
     ModelSpec(
-        "A2C Final",
-        A2C,
-        "./models/best_final_a2c/best_model.zip",
-        "./models/best_final_a2c/vecnormalize.pkl",
+        name="A2C Final",
+        model_type="sb3",
+        model_class=A2C,
+        model_path="./models/best_final_a2c/best_model.zip",
+        vecnorm_path="./models/best_final_a2c/vecnormalize.pkl",
+    ),
+    ModelSpec(
+        name="PPO-LSTM Final",
+        model_type="recurrent",
+        model_path="./models/best_final_recurrent_ppo/best_model.zip",
+        vecnorm_path="./models/best_final_recurrent_ppo/vecnormalize.pkl",
+    ),
+    ModelSpec(
+        name="Vanilla DQN freq1",
+        model_type="dqn",
+        model_path="./models/best_vanilla_dqn_freq1/best_model.zip",
+        vecnorm_path="./models/vecnormalize_vanilla_dqn_freq1.pkl",
+    ),
+    ModelSpec(
+        name="Double DQN freq1",
+        model_type="dqn",
+        model_path="./models/best_double_dqn_freq1/best_model.zip",
+        vecnorm_path="./models/vecnormalize_double_dqn_freq1.pkl",
+    ),
+    ModelSpec(
+        name="Dueling DQN freq1",
+        model_type="dqn",
+        model_path="./models/best_dueling_dqn_freq1/best_model.zip",
+        vecnorm_path="./models/vecnormalize_dueling_dqn_freq1.pkl",
+        custom_policy=DuelingDQNPolicy,
+    ),
+    ModelSpec(
+        name="Double+Dueling DQN freq1",
+        model_type="dqn",
+        model_path="./models/best_double_dueling_dqn_freq1/best_model.zip",
+        vecnorm_path="./models/vecnormalize_double_dueling_dqn_freq1.pkl",
+        custom_policy=DoubleDuelingDQNPolicy,
     ),
 ]
 
@@ -80,37 +121,39 @@ def make_eval_env(seed, vecnorm_path):
     return env
 
 
+def load_dqn_model(spec):
+    if spec.custom_policy is None:
+        return DQN.load(spec.model_path)
+
+    return DQN.load(
+        spec.model_path,
+        custom_objects={"policy_class": spec.custom_policy},
+    )
+
+
 def load_adapter(spec):
     if not os.path.exists(spec.model_path):
         print(f"[SKIP] {spec.name}: missing model {spec.model_path}")
-        return None
+        return None, None
 
     if not os.path.exists(spec.vecnorm_path):
         print(f"[SKIP] {spec.name}: missing VecNormalize {spec.vecnorm_path}")
-        return None
+        return None, None
+
+    if spec.model_type == "recurrent":
+        if RecurrentPPO is None:
+            print(f"[SKIP] {spec.name}: sb3-contrib is not installed.")
+            return None, None
+
+        model = RecurrentPPO.load(spec.model_path)
+        return RecurrentPPOAdapter(spec.name, model), spec.vecnorm_path
+
+    if spec.model_type == "dqn":
+        model = load_dqn_model(spec)
+        return SB3AgentAdapter(spec.name, model), spec.vecnorm_path
 
     model = spec.model_class.load(spec.model_path)
-    return SB3AgentAdapter(spec.name, model)
-
-
-def load_recurrent_ppo_adapter():
-    if RecurrentPPO is None:
-        print("[SKIP] PPO-LSTM: sb3-contrib is not installed.")
-        return None, None
-
-    model_path = "./models/best_final_recurrent_ppo/best_model.zip"
-    vecnorm_path = "./models/best_final_recurrent_ppo/vecnormalize.pkl"
-
-    if not os.path.exists(model_path):
-        print(f"[SKIP] PPO-LSTM: missing model {model_path}")
-        return None, None
-
-    if not os.path.exists(vecnorm_path):
-        print(f"[SKIP] PPO-LSTM: missing VecNormalize {vecnorm_path}")
-        return None, None
-
-    model = RecurrentPPO.load(model_path)
-    return RecurrentPPOAdapter("PPO-LSTM Final", model), vecnorm_path
+    return SB3AgentAdapter(spec.name, model), spec.vecnorm_path
 
 
 def run_episode(adapter, env, max_queue=500):
@@ -172,11 +215,12 @@ def summarize(rows):
     ]
 
     summary = {}
-
     for metric in metrics:
         values = np.array([row[metric] for row in rows], dtype=float)
         summary[f"{metric}_mean"] = float(values.mean())
-        summary[f"{metric}_std"] = float(values.std(ddof=1)) if len(values) > 1 else 0.0
+        summary[f"{metric}_std"] = (
+            float(values.std(ddof=1)) if len(values) > 1 else 0.0
+        )
 
     return summary
 
@@ -205,7 +249,7 @@ def plot_metric(summary_rows, metric, out_dir):
     means = [row[f"{metric}_mean"] for row in summary_rows]
     stds = [row[f"{metric}_std"] for row in summary_rows]
 
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(13, 5))
     plt.bar(names, means, yerr=stds, capsize=4)
     plt.xticks(rotation=30, ha="right")
     plt.ylabel(metric.replace("_", " "))
@@ -221,7 +265,7 @@ def plot_metric(summary_rows, metric, out_dir):
 def plot_metric_by_seed(episode_rows, metric, out_dir):
     algorithms = sorted({row["algorithm"] for row in episode_rows})
 
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(11, 5))
     for algorithm in algorithms:
         rows = sorted(
             [row for row in episode_rows if row["algorithm"] == algorithm],
@@ -235,7 +279,7 @@ def plot_metric_by_seed(episode_rows, metric, out_dir):
     plt.ylabel(metric.replace("_", " "))
     plt.title(f"Per-seed comparison: {metric.replace('_', ' ')}")
     plt.grid(alpha=0.3)
-    plt.legend()
+    plt.legend(fontsize=8)
     plt.tight_layout()
 
     path = os.path.join(out_dir, f"{metric}_by_seed.png")
@@ -253,7 +297,7 @@ def plot_combined_metrics(summary_rows, out_dir):
     ]
 
     names = [row["algorithm"] for row in summary_rows]
-    fig, axes = plt.subplots(2, 3, figsize=(16, 9))
+    fig, axes = plt.subplots(2, 3, figsize=(18, 9))
     axes = axes.flatten()
 
     for ax, metric in zip(axes, metrics):
@@ -261,11 +305,11 @@ def plot_combined_metrics(summary_rows, out_dir):
         stds = [row[f"{metric}_std"] for row in summary_rows]
         ax.bar(names, means, yerr=stds, capsize=4)
         ax.set_title(metric.replace("_", " "))
-        ax.tick_params(axis="x", rotation=25)
+        ax.tick_params(axis="x", rotation=30)
         ax.grid(axis="y", alpha=0.3)
 
     axes[-1].axis("off")
-    fig.suptitle("Final Model Comparison Summary", fontsize=14)
+    fig.suptitle("Main Algorithm Comparison Summary", fontsize=14)
     fig.tight_layout()
 
     path = os.path.join(out_dir, "all_metrics_summary.png")
@@ -279,14 +323,27 @@ def print_summary(summary_rows):
     for row in summary_rows:
         print(f"\n{row['algorithm']}")
         print(f"  Return:           {row['return_mean']:.2f} +/- {row['return_std']:.2f}")
-        print(f"  Latency proxy:    {row['latency_proxy_mean']:.4f} +/- {row['latency_proxy_std']:.4f}")
+        print(
+            "  Latency proxy:    "
+            f"{row['latency_proxy_mean']:.4f} +/- {row['latency_proxy_std']:.4f}"
+        )
         print(f"  Cost:             {row['cost_mean']:.2f} +/- {row['cost_std']:.2f}")
-        print(f"  Dropped requests: {row['dropped_requests_mean']:.2f} +/- {row['dropped_requests_std']:.2f}")
-        print(f"  Action stability: {row['action_stability_mean']:.4f} +/- {row['action_stability_std']:.4f}")
+        print(
+            "  Dropped requests: "
+            f"{row['dropped_requests_mean']:.2f} +/- "
+            f"{row['dropped_requests_std']:.2f}"
+        )
+        print(
+            "  Action stability: "
+            f"{row['action_stability_mean']:.4f} +/- "
+            f"{row['action_stability_std']:.4f}"
+        )
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Main algorithm comparison with adapters")
+    parser = argparse.ArgumentParser(
+        description="Evaluate final/tuned algorithms on the same traffic seeds."
+    )
 
     parser.add_argument(
         "--seeds",
@@ -309,21 +366,18 @@ def main():
     summary_rows = []
 
     adapters_with_vecnorm = []
-
     for spec in MODEL_SPECS:
-        adapter = load_adapter(spec)
+        adapter, vecnorm_path = load_adapter(spec)
         if adapter is not None:
-            adapters_with_vecnorm.append((adapter, spec.vecnorm_path))
+            adapters_with_vecnorm.append((adapter, vecnorm_path))
 
-    recurrent_adapter, recurrent_vecnorm = load_recurrent_ppo_adapter()
-    if recurrent_adapter is not None:
-        adapters_with_vecnorm.append((recurrent_adapter, recurrent_vecnorm))
+    if not adapters_with_vecnorm:
+        raise RuntimeError("No models were loaded. Check model and VecNormalize paths.")
 
     for adapter, vecnorm_path in adapters_with_vecnorm:
         print(f"\nEvaluating {adapter.name}...")
 
         rows_for_agent = []
-
         for seed in seeds:
             env = make_eval_env(seed=seed, vecnorm_path=vecnorm_path)
             metrics = run_episode(adapter, env)
