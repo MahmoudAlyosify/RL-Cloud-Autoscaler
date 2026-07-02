@@ -9,7 +9,7 @@
 
 ## 📌 Overview
 
-This repository implements autonomous cloud resource provisioning using Deep Reinforcement Learning. The auto-scaling problem is formulated as a Markov Decision Process inside a custom Gymnasium environment that models realistic cloud behaviours: cold-start delays, minimum server counts, and stochastic workloads.
+This repository implements autonomous cloud resource provisioning using Deep Reinforcement Learning. The auto-scaling problem is formulated as a Markov Decision Process inside a custom Gymnasium environment.
 
 The goal is to learn dynamic scaling policies that minimise infrastructure costs while keeping latency low and avoiding dropped requests under non-stationary traffic patterns.
 
@@ -17,24 +17,33 @@ The goal is to learn dynamic scaling policies that minimise infrastructure costs
 
 ## 🚀 Key Features
 
-- **Custom Gymnasium Environment** A mathematically bounded cloud simulator enforcing constraints such as minimum servers (N_min), boot-up latencies, and capacity limits.
-- **Deep RL Agents** PPO, Recurrent PPO (LSTM), DQN (Vanilla, Double, Dueling, Double+Dueling), and A2C.
-- **Proactive Scaling** Cold-start delay forces agents to anticipate traffic rather than react to it.
-- **Sparsity Ablation** Each algorithm is evaluated at update frequencies k = 1, 4, 8 to measure the compute-efficiency tradeoff.
-- **Reproducible Experiments** Seedable training and evaluation; all results serialised to JSON and NPZ for plotting.
+- **Custom Gymnasium Environment** — A mathematically bounded cloud simulator enforcing constraints such as minimum servers (N_min), boot-up latencies, and capacity limits.
+- **Deep RL Agents** — PPO, Recurrent PPO (LSTM), DQN (Vanilla, Double, Dueling, Double+Dueling), and A2C.
+- **Hyperparameter Tuning (Optuna)** — Optuna-based sweeps and fine-tuning scripts for DQN / Dueling families to find robust settings.
+- **Fine-tuning & Sparse-update Ablations** — Scripts to fine-tune pretrained models and to run the sparsity ablation (fewer gradient updates per environment step) for compute/quality trade-offs.
+- **Proactive Scaling** — Cold-start delay forces agents to anticipate traffic rather than react to it.
+- **Sparsity Ablation** — Each algorithm is evaluated at update frequencies k = 1, 4, 8 to measure the compute-efficiency tradeoff.
+- **Reproducible Experiments** — Seedable training and evaluation; all results serialised to JSON and NPZ for plotting.
 
 ---
 
 ## 📁 Repository Structure
 
 ```
-custom_envs/        — Gymnasium environment and wrappers
-agents/             — DQN, PPO, A2C agent implementations
-experiments/        — Training, evaluation, and ablation scripts
-notebooks/          — Interactive experiments and visualisations
-tests/              — Unit and integration tests
-environment.yml     — Conda environment specification
-requirements.txt    — pip dependencies
+custom_envs/                         — Gymnasium environment and wrappers
+agents/                              — DQN, PPO, A2C agent implementations and helpers
+experiments/                         — Training, evaluation, ablation, and utility scripts
+notebooks/                           — Interactive experiments and visualisations
+    RL_Cloud_Autoscaler_Complete.ipynb — Complete project notebook (tutorial + reproducible runs)
+environment.yml                      — Conda environment specification
+requirements.txt                     — pip dependencies
+train_dqn_fine_tuning.py             — Optuna sweeps & fine-tuning for DQN
+train_dueling_dqn_fine_tuning.py     — Optuna sweeps for dueling-family DQN
+train_recurrent_ppo_variants.py      — Variant runner for recurrent PPO (LSTM)
+train_a2c_variants.py                — Variant runner for A2C configurations
+sparse_*.py                          — Sparse-update ablation scripts (ppo / recurrent_ppo / a2c)
+plot_results.py                      — Aggregation and plotting utilities
+README.md                            — This file
 ```
 
 ---
@@ -67,6 +76,17 @@ python train_dqn.py --variant dueling
 python train_dqn.py --variant double_dueling
 ```
 
+### DQN Fine-tuning / Optuna Sweeps
+
+Use the Optuna-based scripts to run hyperparameter sweeps or trimmed fine-tuning for the dueling family:
+
+```bash
+python train_dqn_fine_tuning.py
+python train_dueling_dqn_fine_tuning.py
+```
+
+(These scripts run optuna studies and return the best hyperparameters and saved models.)
+
 ### PPO
 
 ```bash
@@ -79,10 +99,22 @@ python train_ppo.py --timesteps 2000000 --device auto
 python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
 ```
 
+For variant-based recurrent runs (e.g., robust spike traffic, different traffic generators), use:
+
+```bash
+python train_recurrent_ppo_variants.py --variant <variant_name>
+```
+
 ### A2C
 
 ```bash
 python train_a2c.py --timesteps 2000000 --device auto --seed 0
+```
+
+For A2C variants/configurations:
+
+```bash
+python train_a2c_variants.py --variant <variant_name>
 ```
 
 ---
@@ -136,22 +168,22 @@ After all sparsity training runs have completed:
 python sparsity_plotter.py
 ```
 
-Six figures are saved to `./results/Experments/plots_exp2/`:
+Six figures are saved to `./results/Experiments/plots_exp2/` (note: corrected directory name from previous README):
 
 | Plot | File | What it shows |
 |---|---|---|
-| Learning Curves (freq=1) | `learning_curves_freq1.png` | This shows how quickly each algorithm learns when we update its weights after every single step. This is the most aggressive update schedule you can use as you'll see the fastest learning here, but it also costs the most computation per timestep. Notice that algorithms which diverge or plateau early on are the ones that can't handle getting updated so frequently. |
-| Learning Curves (freq=4) | `learning_curves_freq4.png` | This is where we compare algorithms under balanced conditions. It's the standard setup everyone uses to test different variants against each other. You can actually see meaningful differences here because the update schedule isn't extreme in either direction where it's not too sparse and not too aggressive. That's what makes it the best place to fairly judge which algorithm works better. |
-| Learning Curves (freq=8) | `learning_curves_freq8.png` | This shows what happens when we update the least frequently: just once every eight steps. If an algorithm can still learn here, it proves you can train effectively without all that computation. Algorithms that break down at this sparsity level are fragile and can't handle infrequent updates. |
-| Final Performance (freq=1) | `final_performance_freq1.png` | A bar chart showing how well each algorithm performed at the end of training when updating every single step. The error bars tell you the range of results across different test runs. You can compare this directly to the freq=4 and freq=8 charts to see how much performance drops when we update less often. |
-| Final Performance (freq=4) | `final_performance_freq4.png` | The same type of chart, but with updates every four steps instead. Whichever algorithm has the tallest bar here wins the fair comparison. This is the main result the paper focuses on because this is the balanced, standard way everyone tests. |
-| Final Performance (freq=8) | `final_performance_freq8.png` | The same chart again, but now updating only once every eight steps. When you compare this against freq=1 and freq=4, you get the answer to the big question: how much performance do you lose when you cut the updates down to one eighth? And is saving that much computation worth the performance hit? |
+| Learning Curves (freq=1) | `learning_curves_freq1.png` | Learning speed when updating every step.
+| Learning Curves (freq=4) | `learning_curves_freq4.png` | Balanced update schedule comparison.
+| Learning Curves (freq=8) | `learning_curves_freq8.png` | Behaviour with least frequent updates.
+| Final Performance (freq=1) | `final_performance_freq1.png` | Final performance bar chart (freq=1).
+| Final Performance (freq=4) | `final_performance_freq4.png` | Final performance bar chart (freq=4).
+| Final Performance (freq=8) | `final_performance_freq8.png` | Final performance bar chart (freq=8).
 
 ---
 
 ## ✅ Evaluation
 
-Run these after all training and sparsity scripts have completed.
+Run these after training and sparsity scripts have completed.
 
 ```bash
 # Baseline and agent evaluation
