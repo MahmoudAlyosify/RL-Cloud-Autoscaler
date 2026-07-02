@@ -19,6 +19,10 @@ import argparse
 import glob
 import json
 import os
+import sys
+
+# Ensure repo root is on sys.path when running from EXP5_dist/
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from exp5_common import RESULTS_DIR, GAMMA_VALUES, plot_results
 

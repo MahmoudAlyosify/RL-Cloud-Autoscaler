@@ -25,6 +25,12 @@ with:
     python exp5_merge.py
 """
 
+import os
+import sys
+
+# Ensure repo root is on sys.path when running from EXP5_dist/
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from stable_baselines3 import PPO
 from exp5_common import run_agent_all_gammas, build_arg_parser
 

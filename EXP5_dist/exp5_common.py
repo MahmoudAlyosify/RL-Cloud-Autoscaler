@@ -33,6 +33,7 @@ the final plots/exp5_gamma_*.png figures.
 
 import json
 import os
+import sys
 import time
 
 import gymnasium as gym
@@ -42,6 +43,7 @@ from sb3_contrib import RecurrentPPO
 from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from baseline_agent import RuleBasedBaseline
 from cloud_env import CloudScalingEnv  # noqa: F401
 from dueling_dqn_policy import DuelingDQNPolicy
