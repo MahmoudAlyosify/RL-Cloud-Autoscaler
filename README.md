@@ -9,20 +9,19 @@
 
 ## 📌 Overview
 
-This repository implements autonomous cloud resource provisioning using Deep Reinforcement Learning. The auto-scaling problem is formulated as a Markov Decision Process inside a custom Gymnasium environment.
+This repository implements autonomous cloud resource provisioning using Deep Reinforcement Learning. The auto-scaling problem is modelled as a Markov Decision Process inside a custom Gymnasium environment.
 
-The goal is to learn dynamic scaling policies that minimise infrastructure costs while keeping latency low and avoiding dropped requests under non-stationary traffic patterns.
+The goal is to learn dynamic scaling policies that minimise infrastructure cost while keeping latency low and avoiding dropped requests under non-stationary traffic patterns.
 
 ---
 
 ## 🚀 Key Features
 
-- **Custom Gymnasium Environment** — A mathematically bounded cloud simulator enforcing constraints such as minimum servers (N_min), boot-up latencies, and capacity limits.
+- **Custom Gymnasium Environment** — A mathematically bounded cloud simulator enforcing constraints such as minimum servers (N_min), boot-up latencies (cold start), and capacity limits.
 - **Deep RL Agents** — PPO, Recurrent PPO (LSTM), DQN (Vanilla, Double, Dueling, Double+Dueling), and A2C.
-- **Hyperparameter Tuning (Optuna)** — Optuna-based sweeps and fine-tuning scripts for DQN / Dueling families to find robust settings.
+- **Hyperparameter Tuning (Optuna)** — Optuna-based sweeps and fine-tuning scripts for DQN / dueling-family DQN variants.
 - **Fine-tuning & Sparse-update Ablations** — Scripts to fine-tune pretrained models and to run the sparsity ablation (fewer gradient updates per environment step) for compute/quality trade-offs.
 - **Proactive Scaling** — Cold-start delay forces agents to anticipate traffic rather than react to it.
-- **Sparsity Ablation** — Each algorithm is evaluated at update frequencies k = 1, 4, 8 to measure the compute-efficiency tradeoff.
 - **Reproducible Experiments** — Seedable training and evaluation; all results serialised to JSON and NPZ for plotting.
 
 ---
@@ -63,6 +62,8 @@ pip install -r requirements.txt
 pip install stable-baselines3 sb3-contrib gymnasium numpy matplotlib torch optuna
 ```
 
+Note: `sb3-contrib` (for RecurrentPPO) and `optuna` (for hyperparameter sweeps) are optional but required if you intend to run LSTM agents or Optuna studies.
+
 ---
 
 ## 🏃 Training
@@ -76,16 +77,16 @@ python train_dqn.py --variant dueling
 python train_dqn.py --variant double_dueling
 ```
 
-### DQN Fine-tuning / Optuna Sweeps
+You can also control the sparse-update ablation for DQN with `--update_frequency` (choices: 1,2,4,8).
 
-Use the Optuna-based scripts to run hyperparameter sweeps or trimmed fine-tuning for the dueling family:
+### DQN Fine-tuning / Optuna Sweeps
 
 ```bash
 python train_dqn_fine_tuning.py
 python train_dueling_dqn_fine_tuning.py
 ```
 
-(These scripts run optuna studies and return the best hyperparameters and saved models.)
+These scripts run Optuna studies and save the best configurations and models.
 
 ### PPO
 
@@ -99,7 +100,7 @@ python train_ppo.py --timesteps 2000000 --device auto
 python train_recurrent_ppo.py --timesteps 2000000 --device auto --seed 0
 ```
 
-For variant-based recurrent runs (e.g., robust spike traffic, different traffic generators), use:
+For variant-based recurrent runs (e.g., robust spike traffic), use:
 
 ```bash
 python train_recurrent_ppo_variants.py --variant <variant_name>
@@ -123,61 +124,31 @@ python train_a2c_variants.py --variant <variant_name>
 
 Tests whether sparse gradient updates (fewer updates per environment step) improve compute efficiency without hurting control quality.
 
-> ⚠️ **Important:** Run the default training command for each algorithm first (see Training above) to produce the best pretrained model. The sparsity scripts load that model and fine-tune under each frequency (they do not train from scratch).
+> ⚠️ Important: run the default training command for each algorithm first (see Training above) to produce the pretrained model. The sparsity scripts fine-tune those pretrained models (they do not always train from scratch).
 
-### DQN Sparsity (12 runs: 4 variants × 3 frequencies)
+### DQN Sparsity (4 variants × 3 frequencies)
 
 ```bash
-python train_dqn.py --variant vanilla        --update_frequency 1
-python train_dqn.py --variant vanilla        --update_frequency 4
-python train_dqn.py --variant vanilla        --update_frequency 8
-python train_dqn.py --variant double         --update_frequency 1
-python train_dqn.py --variant double         --update_frequency 4
-python train_dqn.py --variant double         --update_frequency 8
-python train_dqn.py --variant dueling        --update_frequency 1
-python train_dqn.py --variant dueling        --update_frequency 4
-python train_dqn.py --variant dueling        --update_frequency 8
-python train_dqn.py --variant double_dueling --update_frequency 1
-python train_dqn.py --variant double_dueling --update_frequency 4
-python train_dqn.py --variant double_dueling --update_frequency 8
+python train_dqn.py --variant <variant> --update_frequency 1
+python train_dqn.py --variant <variant> --update_frequency 4
+python train_dqn.py --variant <variant> --update_frequency 8
 ```
 
-### PPO Sparsity (k = 1, 4, 8 runs sequentially in one command)
+### PPO / Recurrent PPO / A2C Sparsity
 
 ```bash
 python sparse_ppo.py
-```
-
-### Recurrent PPO Sparsity (k = 1, 4, 8 runs sequentially in one command)
-
-```bash
 python sparse_recurrent_ppo.py
-```
-
-### A2C Sparsity (k = 1, 4, 8 runs sequentially in one command)
-
-```bash
 python sparse_a2c.py
 ```
 
-### 📈 Generate Sparsity Plots
-
-After all sparsity training runs have completed:
+### Generate Sparsity Plots
 
 ```bash
 python sparsity_plotter.py
 ```
 
-Six figures are saved to `./results/Experiments/plots_exp2/` (note: corrected directory name from previous README):
-
-| Plot | File | What it shows |
-|---|---|---|
-| Learning Curves (freq=1) | `learning_curves_freq1.png` | Learning speed when updating every step.
-| Learning Curves (freq=4) | `learning_curves_freq4.png` | Balanced update schedule comparison.
-| Learning Curves (freq=8) | `learning_curves_freq8.png` | Behaviour with least frequent updates.
-| Final Performance (freq=1) | `final_performance_freq1.png` | Final performance bar chart (freq=1).
-| Final Performance (freq=4) | `final_performance_freq4.png` | Final performance bar chart (freq=4).
-| Final Performance (freq=8) | `final_performance_freq8.png` | Final performance bar chart (freq=8).
+Six figures are saved to `./results/Experiments/plots_exp2/` by convention.
 
 ---
 
@@ -209,9 +180,26 @@ python plot_results.py
 
 After running `plot_results.py`, the following figures are saved to `./results/plots/`:
 
-- Learning curves at update frequency 1, 4, and 8 for all the algorithms
-- Final performance bar charts at update frequency 1, 4, and 8 for all the algorithms
+- Learning curves at update frequency 1, 4, and 8 for all algorithms
+- Final performance bar charts at update frequency 1, 4, and 8
 - Convergence box plots and algorithm comparison charts
+
+---
+
+## 📝 Notes & Known issues (please read)
+
+- Observation-space documentation: the notebook mentions a 6-D observation in some markdown cells, but the environment implementation currently returns a 5-D observation vector (active, booting, cpu_util, queue, arrival_ema). If you rely on a 6th feature (e.g. previous action or trend), either update `cloud_env.py` or change the docs. Recommended action: keep the env as 5-D and update the markdown to avoid mismatch.
+
+- Reward-weight mismatch: global defaults in the notebook/configs use `gamma = 50.0` while `cloud_env.py` sets the default `reward_weights=(1.0, 0.1, 20.0, 5.0)` in the environment constructor. For reproducible experiments, unify these values. Recommended: set the environment's default gamma (drop penalty) to 50.0 or explicitly pass `reward_weights=` when creating envs.
+
+- Optional dependencies: `sb3-contrib` and `optuna` are optional; the code checks for them and prints warnings if missing. If you want to use RecurrentPPO or run Optuna sweeps, install them.
+
+- Results directory: README now references `./results/Experiments/plots_exp2/` for sparsity plots (corrected from the earlier typo `Experments`). Ensure downstream scripts write to expected locations or adjust `plot_results.py` accordingly.
+
+If you want, I can open a small PR that:
+- fixes the `observation_space` description in the notebook,
+- aligns the default reward weight values across notebook and environment, and
+- optionally adds sb3-contrib/optuna to `environment.yml` (recommended for reproducibility).
 
 ---
 
@@ -219,7 +207,7 @@ After running `plot_results.py`, the following figures are saved to `./results/p
 
 - Use `--timesteps 20000` for a quick smoke test before committing to a full run.
 - If training is unstable, try lowering the learning rate or increasing batch size.
-- All results are saved incrementally and a crashed run can be resumed without losing completed files.
+- All results are saved incrementally and many training scripts support resuming from checkpoints.
 
 ---
 
