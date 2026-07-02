@@ -1,0 +1,4 @@
+stable-baselines3
+gymnasium[classic_control]
+optuna
+tensorboard
